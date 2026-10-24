@@ -464,6 +464,21 @@ def cmd_watch_add(args, today: date) -> int:
     return 0 if added else EXIT_NOT_FOUND
 
 
+def ago(iso: str | None) -> str:
+    """How long ago a time from this computer's clock was, so the student's time zone doesn't matter."""
+    try:
+        mins = int((datetime.now() - datetime.fromisoformat(iso)).total_seconds() // 60)
+    except (TypeError, ValueError):
+        return "not yet"
+    if mins < 1:
+        return "just now"
+    if mins < 60:
+        return f"{mins} min ago"
+    if mins < 48 * 60:
+        return f"{mins // 60} h ago"
+    return f"{mins // (24 * 60)} days ago"
+
+
 def cmd_watch_list(args, today: date) -> int:
     state = load_state(args.is_sample)
     if not state["watches"]:
@@ -472,8 +487,24 @@ def cmd_watch_list(args, today: date) -> int:
     count = len(state["watches"])
     print(f"Watching {count} class{'es' if count != 1 else ''}:")
     for w in state["watches"]:
-        print(f"{w['label']}, {term_label(w['term'])}: last seen {w.get('last_status', '?')}, "
-              f"since {w.get('added', '?')}")
+        print(f"{w['label']}, {term_label(w['term'])}: {w.get('last_status', '?')} when last checked "
+              f"{ago(w.get('last_checked'))}, watching since {w.get('added', '?')}")
+    return 0
+
+
+def cmd_drill(args, today: date) -> int:
+    """A test alert: the saved CSE 340 data with full section #21671 suddenly showing 2 open seats.
+
+    Uses no network and leaves every watch list alone."""
+    s = next((x for x in fetch("2271", subject="CSE", catalog="340", sample=SAMPLE_FILE)["sections"]
+              if x["nbr"] == "21671"), None)
+    if s is None:
+        raise Stop(EXIT_UNEXPECTED, "The Skill's sample data is missing; install the Skill again.")
+    s = dict(s, taken=s["cap"] - 2, open=2, open_reserved=0, status="OPEN")
+    print("TEST-ALERT This is a drill, not a real opening. Handle the next lines like NEW-OPEN, "
+          "but start the call and the text with \"Test alert\".")
+    print(f"NEW-OPEN {short_label(s)} has 2 open seats of {s['cap']}")
+    print("\n".join(link_lines("2271", "21671")))
     return 0
 
 
@@ -620,6 +651,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     check = sub.add_parser("check", parents=[common], help="check every watched class once (the scheduled check)")
     check.set_defaults(func=cmd_check)
+
+    drill = sub.add_parser("drill", parents=[common], help="print a test alert from the saved sample data")
+    drill.set_defaults(func=cmd_drill)
     return parser
 
 

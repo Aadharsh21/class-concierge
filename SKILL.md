@@ -1,6 +1,6 @@
 ---
 name: seat-snipe
-description: Watches full ASU classes and calls and texts the student the moment a seat opens, with a direct link to add the class. Use when an Arizona State University student says a class is full, asks to be told when a seat opens, wants to snipe or track a seat or a class number during registration, asks how many seats are left in a course, or asks which classes are being watched.
+description: Watches full ASU classes and calls and texts the student the moment a seat opens, with a direct link to add the class. Use when an Arizona State University student says a class is full, asks to be told when a seat opens, wants to snipe or track a seat or a class number during registration, asks how many seats are left in a course, asks which classes are being watched, or wants a test seat alert.
 ---
 
 # Seat Snipe
@@ -17,6 +17,7 @@ link and the student adds the class themselves.
 - "watch class 21671 for spring"
 - "any seats left in MAT 343 with Smith?"
 - "what classes are you watching for me?" or "I got in, stop watching CSE 365"
+- "send me a test alert"
 
 Not for choosing classes, degree planning, or anything that changes the student's enrollment.
 
@@ -82,9 +83,17 @@ again they hear about it again.
 
 ### 4. Managing the watch list
 
-- "What are you watching?": `python3 scripts/seats.py watch list`
+- "What are you watching?" or "are you still checking?": `python3 scripts/seats.py watch list` (it also shows
+  when each class was last checked).
 - "I got in", "stop watching CSE 365": `python3 scripts/seats.py watch remove --class <number>`, or `--all`.
 - Whenever a command prints `NO-WATCHES`, delete the Seat Snipe check-in.
+
+### 5. Test alert
+
+When the student wants to see what an alert looks like ("send me a test alert", "test seat snipe"), run
+`python3 scripts/seats.py drill`. It prints a `NEW-OPEN` line built from saved sample data, without touching the
+network or the watch list. Handle it exactly like a real `NEW-OPEN` (call, then text, at any hour since the student
+asked), but start both the call and the text with "Test alert" so it is never mistaken for a real seat.
 
 ## Replies
 
