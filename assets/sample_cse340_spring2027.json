@@ -1,0 +1,418 @@
+{
+ "note": "Saved copy of ASU class search for CSE 340, Spring 2027 (term 2271), taken 2026-10-24. Used by --sample.",
+ "classes": [
+  {
+   "CLAS": {
+    "CLASSNBR": "18607",
+    "STRM": "2271",
+    "SUBJECT": "CSE",
+    "CATALOGNBR": "340",
+    "CLASSSECTION": "1001",
+    "SESSIONCODE": "C",
+    "LOCATION": "TEMPE",
+    "INSTRUCTIONMODE": "P",
+    "MON": "N",
+    "TUES": "Y",
+    "WED": "N",
+    "THURS": "Y",
+    "FRI": "N",
+    "SAT": "N",
+    "SUN": "N",
+    "STARTTIME": "10:30 AM",
+    "ENDTIME": "11:45 AM",
+    "FACILITYID": "COOR170",
+    "INSTRUCTORSLIST": [
+     "David Claveau"
+    ],
+    "ENRLTOT": "181",
+    "ENRLCAP": "220",
+    "CLASSSTAT": "A",
+    "ENRLSTAT": "O",
+    "ENROLLDEADLINE": "2027-01-17 00:00:00.0",
+    "COURSETITLELONG": "Principles of Programming Languages",
+    "TITLE": "Principles of Programming Lang",
+    "STARTDATE": "2027-01-11 00:00:00.0",
+    "ENDDATE": "2027-04-30 00:00:00.0"
+   },
+   "seatInfo": {
+    "ENRL_CAP": 220,
+    "ENRL_TOT": 183
+   },
+   "reservedSeatsInfo": [
+    {
+     "ENRL_CAP": 5,
+     "ENRL_TOT": 0
+    }
+   ]
+  },
+  {
+   "CLAS": {
+    "CLASSNBR": "19053",
+    "STRM": "2271",
+    "SUBJECT": "CSE",
+    "CATALOGNBR": "340",
+    "CLASSSECTION": "2201",
+    "SESSIONCODE": "B",
+    "LOCATION": "ASUONLINE",
+    "INSTRUCTIONMODE": "OL",
+    "MON": "N",
+    "TUES": "N",
+    "WED": "N",
+    "THURS": "N",
+    "FRI": "N",
+    "SAT": "N",
+    "SUN": "N",
+    "STARTTIME": null,
+    "ENDTIME": null,
+    "FACILITYID": "INTRT",
+    "INSTRUCTORSLIST": [
+     "Rida Bazzi"
+    ],
+    "ENRLTOT": "4",
+    "ENRLCAP": "50",
+    "CLASSSTAT": "A",
+    "ENRLSTAT": "O",
+    "ENROLLDEADLINE": "2027-03-16 00:00:00.0",
+    "COURSETITLELONG": "Principles of Programming Languages",
+    "TITLE": "Principles of Programming Lang",
+    "STARTDATE": "2027-03-15 00:00:00.0",
+    "ENDDATE": "2027-04-30 00:00:00.0"
+   },
+   "seatInfo": {
+    "ENRL_CAP": 50,
+    "ENRL_TOT": 4
+   },
+   "reservedSeatsInfo": [
+    {
+     "ENRL_CAP": 10,
+     "ENRL_TOT": 0
+    },
+    {
+     "ENRL_CAP": 40,
+     "ENRL_TOT": 4
+    }
+   ]
+  },
+  {
+   "CLAS": {
+    "CLASSNBR": "23721",
+    "STRM": "2271",
+    "SUBJECT": "CSE",
+    "CATALOGNBR": "340",
+    "CLASSSECTION": "1007",
+    "SESSIONCODE": "C",
+    "LOCATION": "TEMPE",
+    "INSTRUCTIONMODE": "P",
+    "MON": "N",
+    "TUES": "Y",
+    "WED": "N",
+    "THURS": "Y",
+    "FRI": "N",
+    "SAT": "N",
+    "SUN": "N",
+    "STARTTIME": "9:00 AM",
+    "ENDTIME": "10:15 AM",
+    "FACILITYID": "COOR170",
+    "INSTRUCTORSLIST": [
+     "Rida Bazzi"
+    ],
+    "ENRLTOT": "6",
+    "ENRLCAP": "220",
+    "CLASSSTAT": "A",
+    "ENRLSTAT": "O",
+    "ENROLLDEADLINE": "2027-01-17 00:00:00.0",
+    "COURSETITLELONG": "Principles of Programming Languages",
+    "TITLE": "Principles of Programming Lang",
+    "STARTDATE": "2027-01-11 00:00:00.0",
+    "ENDDATE": "2027-04-30 00:00:00.0"
+   },
+   "seatInfo": {
+    "ENRL_CAP": 220,
+    "ENRL_TOT": 6
+   },
+   "reservedSeatsInfo": [
+    {
+     "ENRL_CAP": 5,
+     "ENRL_TOT": 0
+    }
+   ]
+  },
+  {
+   "CLAS": {
+    "CLASSNBR": "25541",
+    "STRM": "2271",
+    "SUBJECT": "CSE",
+    "CATALOGNBR": "340",
+    "CLASSSECTION": "2001",
+    "SESSIONCODE": "C",
+    "LOCATION": "ASUONLINE",
+    "INSTRUCTIONMODE": "OL",
+    "MON": "N",
+    "TUES": "N",
+    "WED": "N",
+    "THURS": "N",
+    "FRI": "N",
+    "SAT": "N",
+    "SUN": "N",
+    "STARTTIME": null,
+    "ENDTIME": null,
+    "FACILITYID": "INTRT",
+    "INSTRUCTORSLIST": [
+     "Rida Bazzi"
+    ],
+    "ENRLTOT": "51",
+    "ENRLCAP": "100",
+    "CLASSSTAT": "A",
+    "ENRLSTAT": "O",
+    "ENROLLDEADLINE": "2027-01-17 00:00:00.0",
+    "COURSETITLELONG": "Principles of Programming Languages",
+    "TITLE": "Principles of Programming Lang",
+    "STARTDATE": "2027-01-11 00:00:00.0",
+    "ENDDATE": "2027-04-30 00:00:00.0"
+   },
+   "seatInfo": {
+    "ENRL_CAP": 100,
+    "ENRL_TOT": 51
+   },
+   "reservedSeatsInfo": []
+  },
+  {
+   "CLAS": {
+    "CLASSNBR": "14964",
+    "STRM": "2271",
+    "SUBJECT": "CSE",
+    "CATALOGNBR": "340",
+    "CLASSSECTION": "1009",
+    "SESSIONCODE": "C",
+    "LOCATION": "TEMPE",
+    "INSTRUCTIONMODE": "HY",
+    "MON": "N",
+    "TUES": "N",
+    "WED": "N",
+    "THURS": "N",
+    "FRI": "N",
+    "SAT": "N",
+    "SUN": "N",
+    "STARTTIME": null,
+    "ENDTIME": null,
+    "FACILITYID": "INTRT",
+    "INSTRUCTORSLIST": [
+     "Rida Bazzi"
+    ],
+    "ENRLTOT": "4",
+    "ENRLCAP": "110",
+    "CLASSSTAT": "A",
+    "ENRLSTAT": "O",
+    "ENROLLDEADLINE": "2027-01-17 00:00:00.0",
+    "COURSETITLELONG": "Principles of Programming Languages",
+    "TITLE": "Principles of Programming Lang",
+    "STARTDATE": "2027-01-11 00:00:00.0",
+    "ENDDATE": "2027-04-30 00:00:00.0"
+   },
+   "seatInfo": {
+    "ENRL_CAP": 110,
+    "ENRL_TOT": 4
+   },
+   "reservedSeatsInfo": []
+  },
+  {
+   "CLAS": {
+    "CLASSNBR": "19123",
+    "STRM": "2271",
+    "SUBJECT": "CSE",
+    "CATALOGNBR": "340",
+    "CLASSSECTION": "2202",
+    "SESSIONCODE": "B",
+    "LOCATION": "ASUONLINE",
+    "INSTRUCTIONMODE": "OL",
+    "MON": "N",
+    "TUES": "N",
+    "WED": "N",
+    "THURS": "N",
+    "FRI": "N",
+    "SAT": "N",
+    "SUN": "N",
+    "STARTTIME": null,
+    "ENDTIME": null,
+    "FACILITYID": "INTRT",
+    "INSTRUCTORSLIST": [
+     "Rida Bazzi"
+    ],
+    "ENRLTOT": "4",
+    "ENRLCAP": "50",
+    "CLASSSTAT": "A",
+    "ENRLSTAT": "O",
+    "ENROLLDEADLINE": "2027-03-16 00:00:00.0",
+    "COURSETITLELONG": "Principles of Programming Languages",
+    "TITLE": "Principles of Programming Lang",
+    "STARTDATE": "2027-03-15 00:00:00.0",
+    "ENDDATE": "2027-04-30 00:00:00.0"
+   },
+   "seatInfo": {
+    "ENRL_CAP": 50,
+    "ENRL_TOT": 4
+   },
+   "reservedSeatsInfo": []
+  },
+  {
+   "CLAS": {
+    "CLASSNBR": "21670",
+    "STRM": "2271",
+    "SUBJECT": "CSE",
+    "CATALOGNBR": "340",
+    "CLASSSECTION": "1002",
+    "SESSIONCODE": "C",
+    "LOCATION": "TEMPE",
+    "INSTRUCTIONMODE": "P",
+    "MON": "N",
+    "TUES": "N",
+    "WED": "N",
+    "THURS": "N",
+    "FRI": "Y",
+    "SAT": "N",
+    "SUN": "N",
+    "STARTTIME": "9:00 AM",
+    "ENDTIME": "9:50 AM",
+    "FACILITYID": "SCOB252",
+    "INSTRUCTORSLIST": [
+     "David Claveau"
+    ],
+    "ENRLTOT": "71",
+    "ENRLCAP": "110",
+    "CLASSSTAT": "A",
+    "ENRLSTAT": "O",
+    "ENROLLDEADLINE": "2027-01-17 00:00:00.0",
+    "COURSETITLELONG": "Principles of Programming Languages",
+    "TITLE": "Principles of Programming Lang",
+    "STARTDATE": "2027-01-11 00:00:00.0",
+    "ENDDATE": "2027-04-30 00:00:00.0"
+   },
+   "seatInfo": {
+    "ENRL_CAP": 110,
+    "ENRL_TOT": 73
+   },
+   "reservedSeatsInfo": []
+  },
+  {
+   "CLAS": {
+    "CLASSNBR": "21671",
+    "STRM": "2271",
+    "SUBJECT": "CSE",
+    "CATALOGNBR": "340",
+    "CLASSSECTION": "1003",
+    "SESSIONCODE": "C",
+    "LOCATION": "TEMPE",
+    "INSTRUCTIONMODE": "HY",
+    "MON": "N",
+    "TUES": "N",
+    "WED": "N",
+    "THURS": "N",
+    "FRI": "N",
+    "SAT": "N",
+    "SUN": "N",
+    "STARTTIME": null,
+    "ENDTIME": null,
+    "FACILITYID": "INTRT",
+    "INSTRUCTORSLIST": [
+     "David Claveau"
+    ],
+    "ENRLTOT": "110",
+    "ENRLCAP": "110",
+    "CLASSSTAT": "A",
+    "ENRLSTAT": "C",
+    "ENROLLDEADLINE": "2027-01-17 00:00:00.0",
+    "COURSETITLELONG": "Principles of Programming Languages",
+    "TITLE": "Principles of Programming Lang",
+    "STARTDATE": "2027-01-11 00:00:00.0",
+    "ENDDATE": "2027-04-30 00:00:00.0"
+   },
+   "seatInfo": {
+    "ENRL_CAP": 110,
+    "ENRL_TOT": 110
+   },
+   "reservedSeatsInfo": []
+  },
+  {
+   "CLAS": {
+    "CLASSNBR": "25542",
+    "STRM": "2271",
+    "SUBJECT": "CSE",
+    "CATALOGNBR": "340",
+    "CLASSSECTION": "2002",
+    "SESSIONCODE": "C",
+    "LOCATION": "ASUONLINE",
+    "INSTRUCTIONMODE": "OL",
+    "MON": "N",
+    "TUES": "N",
+    "WED": "N",
+    "THURS": "N",
+    "FRI": "N",
+    "SAT": "N",
+    "SUN": "N",
+    "STARTTIME": null,
+    "ENDTIME": null,
+    "FACILITYID": "INTRT",
+    "INSTRUCTORSLIST": [
+     "Rida Bazzi"
+    ],
+    "ENRLTOT": "51",
+    "ENRLCAP": "100",
+    "CLASSSTAT": "A",
+    "ENRLSTAT": "O",
+    "ENROLLDEADLINE": "2027-01-17 00:00:00.0",
+    "COURSETITLELONG": "Principles of Programming Languages",
+    "TITLE": "Principles of Programming Lang",
+    "STARTDATE": "2027-01-11 00:00:00.0",
+    "ENDDATE": "2027-04-30 00:00:00.0"
+   },
+   "seatInfo": {
+    "ENRL_CAP": 100,
+    "ENRL_TOT": 51
+   },
+   "reservedSeatsInfo": []
+  },
+  {
+   "CLAS": {
+    "CLASSNBR": "25550",
+    "STRM": "2271",
+    "SUBJECT": "CSE",
+    "CATALOGNBR": "340",
+    "CLASSSECTION": "1008",
+    "SESSIONCODE": "C",
+    "LOCATION": "TEMPE",
+    "INSTRUCTIONMODE": "P",
+    "MON": "Y",
+    "TUES": "N",
+    "WED": "N",
+    "THURS": "N",
+    "FRI": "N",
+    "SAT": "N",
+    "SUN": "N",
+    "STARTTIME": "9:00 AM",
+    "ENDTIME": "9:50 AM",
+    "FACILITYID": "SCOB252",
+    "INSTRUCTORSLIST": [
+     "Rida Bazzi"
+    ],
+    "ENRLTOT": "2",
+    "ENRLCAP": "110",
+    "CLASSSTAT": "A",
+    "ENRLSTAT": "O",
+    "ENROLLDEADLINE": "2027-01-17 00:00:00.0",
+    "COURSETITLELONG": "Principles of Programming Languages",
+    "TITLE": "Principles of Programming Lang",
+    "STARTDATE": "2027-01-11 00:00:00.0",
+    "ENDDATE": "2027-04-30 00:00:00.0"
+   },
+   "seatInfo": {
+    "ENRL_CAP": 110,
+    "ENRL_TOT": 2
+   },
+   "reservedSeatsInfo": []
+  }
+ ],
+ "total": {
+  "value": 10,
+  "relation": "eq"
+ }
+}
