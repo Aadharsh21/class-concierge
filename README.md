@@ -1,9 +1,10 @@
 # Seat Snipe
 
-Your ASU class is full. Text Cubbie, and it calls you the second a seat opens.
+Your ASU class is full. Text Cubbie, and it tells you the second a seat opens.
 
 Seat Snipe is a [Cubbie](https://cubbie.ai) Skill. It watches Arizona State University's public class search every
-15 minutes and, the moment a seat opens in a class you're watching, calls and texts you a direct link to add it.
+15 minutes and, the moment a seat opens in a class you're watching, alerts you the way you picked: a text with a
+direct link to add it, a phone call, or both.
 
 ## Install
 
@@ -18,9 +19,12 @@ https://github.com/Aadharsh21/seat-snipe
 ```text
 You:    CSE 340 is full for spring 😭 tell me when a seat opens
 Cubbie: CSE 340, Spring 2027: the hybrid section #21671 (Claveau) is full, 110/110.
-        Want me to check it every 15 min and call + text you the second a seat opens?
-You:    yes
-Cubbie: Watching #21671. I'll call you the moment a seat opens.
+        I'll check it every 15 min. When a seat opens, how should I tell you?
+        1. Text with the add link
+        2. Phone call
+        3. Both: a call so you don't miss it, then the link by text
+You:    3
+Cubbie: Watching #21671. I'll call you, then text the link, the moment a seat opens.
 
         (later)
 
@@ -34,7 +38,10 @@ Cubbie: Seat open in CSE 340 (#21671, Claveau)! 2 seats left.
 
 - Watches as many classes as you want, on every ASU campus and ASU Online.
 - Checks every 15 minutes and stays quiet until something changes.
-- Calls and texts you when a seat opens, with the add link ready to tap.
+- Asks once how you want alerts (a text, a phone call, or both) and remembers it. Change it any time with
+  "just text me" or "call me instead".
+- Puts the add link in the text, ready to tap.
+- Send "send me a test alert" to see (and hear) exactly what an opening looks like.
 - Knows about reserved seats: if the only open seats are held for a specific major or cohort, it tells you
   instead of sending you on a wild goose chase.
 - Stops on its own after the last day to add the class, or when you say you got in.

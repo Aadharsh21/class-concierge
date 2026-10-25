@@ -8,7 +8,9 @@ Reads ASU's public class search: no sign-in, no key, standard library only.
   python3 scripts/seats.py watch add --term 2271 --course "CSE 340" --class 21671
   python3 scripts/seats.py watch list
   python3 scripts/seats.py watch remove --class 21671        (or --all)
+  python3 scripts/seats.py alerts --set both                  (text, call or both)
   python3 scripts/seats.py check                              (the scheduled check)
+  python3 scripts/seats.py drill                              (a test alert)
 
 Add --sample to any command to use the saved copy in assets/ instead of the network.
 Sample runs keep their own watch list, apart from the student's.
@@ -53,6 +55,14 @@ MODES = {"P": "in person", "HY": "hybrid", "OL": "online", "IC": "iCourse"}
 NOT_ROOMS = {"INTRT", "TBA", "ONLINE", "ICOURSE", "ASUONLINE", "ARR"}  # placeholders, not real rooms
 DAYS = [("MON", "M"), ("TUES", "T"), ("WED", "W"), ("THURS", "Th"), ("FRI", "F"), ("SAT", "Sa"), ("SUN", "Su")]
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+ALERT_CHOICES = {
+    "text": "a text with the add link",
+    "call": "a phone call only",
+    "both": "a phone call, then the add link by text",
+}
+ALERT_WORDS = {"text": "text", "texts": "text", "sms": "text", "message": "text", "messages": "text",
+               "call": "call", "calls": "call", "phone": "call", "phone call": "call", "phone calls": "call",
+               "both": "both", "all": "both", "call and text": "both", "text and call": "both"}
 
 
 class Stop(Exception):
@@ -351,7 +361,22 @@ def load_state(sample: bool) -> dict:
     state.setdefault("version", 1)
     state.setdefault("watches", [])
     state.setdefault("fail_streak", 0)
+    state.setdefault("alert_by", None)
     return state
+
+
+def parse_alert(text: str) -> str:
+    choice = ALERT_WORDS.get(re.sub(r"\s+", " ", (text or "").strip().lower()))
+    if not choice:
+        raise Stop(EXIT_INPUT, f"Couldn't read the alert choice {text!r}. Use text, call or both.")
+    return choice
+
+
+def alert_line(state: dict) -> str:
+    choice = state.get("alert_by")
+    if choice in ALERT_CHOICES:
+        return f"  alert by: {choice} ({ALERT_CHOICES[choice]})"
+    return f"  alert by: both ({ALERT_CHOICES['both']}; the student never picked, so both is the default)"
 
 
 def save_state(state: dict, sample: bool) -> None:
@@ -430,6 +455,8 @@ def cmd_watch_add(args, today: date) -> int:
                                    "Check the number, or include the course, like --course \"CSE 340\".")
 
     state = load_state(args.is_sample)
+    if args.alert:
+        state["alert_by"] = parse_alert(args.alert)
     added = 0
     for nbr in nbrs:
         s = found.get(nbr)
@@ -461,7 +488,25 @@ def cmd_watch_add(args, today: date) -> int:
     save_state(state, args.is_sample)
     count = len(state["watches"])
     print(f"Watching {count} class{'es' if count != 1 else ''} in total.")
+    if state["alert_by"] in ALERT_CHOICES:
+        print(f"ALERT-BY {state['alert_by']}: {ALERT_CHOICES[state['alert_by']]}")
+    else:
+        print("ASK-ALERTS The student hasn't picked how to be alerted. Ask: text, call or both? "
+              "Then run: alerts --set <choice>")
     return 0 if added else EXIT_NOT_FOUND
+
+
+def cmd_alerts(args, today: date) -> int:
+    state = load_state(args.is_sample)
+    if args.set:
+        state["alert_by"] = parse_alert(args.set)
+        save_state(state, args.is_sample)
+    choice = state["alert_by"]
+    if choice in ALERT_CHOICES:
+        print(f"ALERT-BY {choice}: {ALERT_CHOICES[choice]}")
+    else:
+        print("ALERT-BY not set. Ask the student: text, call or both?")
+    return 0
 
 
 def ago(iso: str | None) -> str:
@@ -504,6 +549,7 @@ def cmd_drill(args, today: date) -> int:
     print("TEST-ALERT This is a drill, not a real opening. Handle the next lines like NEW-OPEN, "
           "but start the call and the text with \"Test alert\".")
     print(f"NEW-OPEN {short_label(s)} has 2 open seats of {s['cap']}")
+    print(alert_line(load_state(args.is_sample)))
     print("\n".join(link_lines("2271", "21671")))
     return 0
 
@@ -592,6 +638,7 @@ def cmd_check(args, today: date) -> int:
         if current == "OPEN" and previous != "OPEN":
             new_open += 1
             print(f"NEW-OPEN {label} has {s['open']} open seat{'s' if s['open'] != 1 else ''} of {s['cap']}")
+            print(alert_line(state))
             print("\n".join(link_lines(w["term"], w["nbr"])))
         elif current == "OPEN":
             print(f"STILL-OPEN {label}, {seats_text(s)} (the student already knows)")
@@ -641,6 +688,7 @@ def build_parser() -> argparse.ArgumentParser:
     add.add_argument("--term", default="next")
     add.add_argument("--course", help='subject and number, like "CSE 340" (faster and more reliable)')
     add.add_argument("--class", dest="cls", action="append", required=True, help="class number; repeat for more")
+    add.add_argument("--alert", help="how the student wants to hear about an opening: text, call or both")
     add.set_defaults(func=cmd_watch_add)
     lst = watch_sub.add_parser("list", parents=[common], help="show what is being watched")
     lst.set_defaults(func=cmd_watch_list)
@@ -654,6 +702,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     drill = sub.add_parser("drill", parents=[common], help="print a test alert from the saved sample data")
     drill.set_defaults(func=cmd_drill)
+
+    alerts = sub.add_parser("alerts", parents=[common], help="show or set how the student hears about an opening")
+    alerts.add_argument("--set", help="text, call or both")
+    alerts.set_defaults(func=cmd_alerts)
     return parser
 
 
