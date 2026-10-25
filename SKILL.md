@@ -27,7 +27,7 @@ link and the student adds the class themselves. Course choices are the student's
 Not for study schedules, homework, or anything that changes the student's enrollment.
 
 To plan a semester, start at section 6. To watch a class, start at section 1. Whenever a command prints `BLOCKED`,
-switch to section 7.
+see section 7.
 
 ## How it works
 
@@ -109,8 +109,7 @@ If the student only wanted to know how many seats are left, answer from the sear
 
 ### 3. Scheduled check (every 15 minutes, on its own)
 
-Run `python3 scripts/seats.py check`. If it prints `BLOCKED` (exit code 6), read the seats in the browser and run
-`check --seen ...` as section 7 explains, then use that output instead. Act only on these lines:
+Run `python3 scripts/seats.py check` and act only on these lines:
 
 - `NEW-OPEN`: a seat just opened. Alert the student right away the way the `alert by` line under it says (it
   already accounts for their no-call hours; if it asks you to check their local time, do):
@@ -134,14 +133,12 @@ Run `python3 scripts/seats.py check`. If it prints `BLOCKED` (exit code 6), read
   example). Text once, never call, with the view link so they can check whether they qualify.
 - `ENDED`: watching stopped for that class (the last day to add it passed, it was cancelled, or it left the class
   search). Text the student once.
-- `WARN`: ASU's class search hasn't answered for a while. Text the student once that you'll keep trying.
+- `WARN`: ASU's class search has blocked or ignored the last several checks. Text the student once that you're
+  still trying, and that a screenshot of Class Search from their phone works in the meantime (section 7).
 - `NO-WATCHES`: nothing is left to watch. Delete this Seat Snipe check-in and don't text the student.
 
-- `ASK-VERIFY`: text the student once that you need them to take over the browser for a quick human check
-  (section 7).
-
 Anything else (`FULL`, `RESERVED`, `STILL-OPEN`, `PARTLY-OPEN`, `PARTLY-READ`, `UNREAD`, `MISSING`, `FAILED`,
-`NEEDS-VERIFY`, `SUMMARY`) needs no message: stay silent. `PARTLY-OPEN` means only part of a set has a seat, which the student
+`SUMMARY`) needs no message: stay silent. A blocked check prints `FAILED`; the next check simply tries again. `PARTLY-OPEN` means only part of a set has a seat, which the student
 can't use yet.
 A watched class stays on the list after an alert until the student says they got in, so if it fills and opens
 again they hear about it again.
@@ -217,41 +214,25 @@ minutes"), do it as a one-time check-in.
    those (`search --instructor "<name>"`). Remember professors they like or want to avoid for next time.
 7. **Hand off to watching:** end with "Want me to watch any of these?" A full section goes straight to section 2.
 
-### 7. When ASU turns the script away (exit code 6, `BLOCKED`)
+### 7. When ASU blocks Cubbie (exit code 6, `BLOCKED`)
 
-ASU's class search sometimes refuses lookups from Cubbie's computer while still showing the public class search
-page to anyone with a browser. When a command prints `BLOCKED`, do the same lookup in Cubbie's browser instead.
-The page builds its results with JavaScript, so open it in the browser: reading it as a plain web page shows no
-seats. Each section on the page has an "Open seats" line, like "Open seats: 3 of 110".
+ASU's class search blocks Cubbie's servers some of the time, even though it works fine on the student's phone.
+Don't open the class search in Cubbie's browser to get around this, and don't ask the student to take over the
+browser for a verification check: ASU sends Cubbie's browser to a sign-in page even after the check.
 
-- **search or compare:** open each `READ` link in the browser and read the sections from the page: class number,
-  days and time, instructor and open seats. Use that exactly as you would have used the script's output.
-- **watch add:** open each class's `READ` link, read its open seats, then run the same `watch add` command again
-  with one `--seen <class number>=<open>/<total>` per class, like `--seen 21671=0/110`.
-- **Scheduled check:** open every `READ` link that `check` printed, read each class's open seats, then run:
+- **The student is waiting (search, compare, watch add):** say it in one line, like "ASU's class search is blocking
+  me right now." Send them the link the script printed so they can open it on their phone, and ask for a
+  screenshot. Read the class numbers, days and times, instructors and "Open seats: X of Y" lines from the
+  screenshot and use them exactly as you would the script's output. Offer to try the live lookup again later.
+- **Watching from a screenshot:** run the same `watch add` command with one `--seen <class number>=<open>/<total>`
+  per class, like `--seen 21671=0/110`. The scheduled checks then keep trying ASU directly.
+- **A screenshot arrives any time later:** read it and run
+  `python3 scripts/seats.py check --seen <class number>=<open>/<total>` with one `--seen` per watched class you can
+  see, then act on its lines as section 3 says.
+- **Scheduled check:** nothing extra to do. A blocked check prints `FAILED` (stay silent), and after several in a
+  row it prints `WARN` once (section 3).
 
-  ```bash
-  python3 scripts/seats.py check --seen <class number>=<open>/<total> --seen <class number>=<open>/<total>
-  ```
-
-  with one `--seen` per class you read, and act on its lines exactly as section 3 says.
-
-Never guess seat numbers. If a page won't load or the class isn't on it, leave that class out; the script
-waits for the next check.
-
-**A human check or sign-in screen.** ASU's site can answer Cubbie's browser with a verification screen (like
-Cloudflare's "Verify you are human") or an ASU sign-in page instead of the class list. Never try to get past it
-yourself.
-
-- If the student is in the conversation, ask them to take over the browser for that one step, then read the class
-  list once it shows. Cubbie keeps the browser session, so later visits often load straight away.
-- If the next screen asks for their ASU password, say that's their call: Seat Snipe only needs the public class
-  list, and signing in would leave Cubbie's browser logged in to their ASU account. They can stop there and send a
-  screenshot of ASU's class search from their phone instead: read the class numbers and "Open seats" lines from it
-  and use them like browser numbers (`--seen`).
-- During a scheduled check, run `python3 scripts/seats.py check --page-blocked` instead of `--seen`. `ASK-VERIFY`
-  means text the student once that you need them to take over the browser for a quick check. `NEEDS-VERIFY` means
-  you already asked: stay silent. The next successful check clears it.
+Never guess seat numbers: if a screenshot doesn't show a class, leave that class out.
 
 ## Replies
 
@@ -288,7 +269,7 @@ Never say the student is enrolled, and never report a seat the script didn't pri
 | 3 | Not on ASU's class search for that term | Say so, and ask the student to check the course, number or term |
 | 4 | ASU's class search isn't answering | If the student is waiting, say ASU's class search isn't responding and offer to try again in a few minutes. During a scheduled check, stay silent unless a `WARN` line printed |
 | 5 | ASU answered in an unexpected way | Say the seat checker needs an update. Never guess seat numbers |
-| 6 | ASU turned the script away (`BLOCKED`) | Don't tell the student anything failed: read the seats in the browser as section 7 says |
+| 6 | ASU blocked Cubbie (`BLOCKED`) | If the student is waiting, say so in one line and ask for a screenshot (section 7). During a scheduled check, stay silent unless a `WARN` line printed |
 
 Without scheduled check-ins or calls (when this Skill runs outside Cubbie), run `check` whenever the student asks
 and tell them to ask again later.

@@ -316,35 +316,37 @@ def label_of(s: dict) -> str:
     return s["label"] if s.get("synthetic") else short_label(s)
 
 
-BROWSER_NOTE = "Open it in the browser (the page needs JavaScript; a plain web read shows no seats)."
+SCREENSHOT_NOTE = ("Tell the student in one line, send them this link to open on their phone, and ask for a "
+                   "screenshot of the results.")
 
 
 def blocked_search(args, exc: Stop, today: date) -> None:
     term = parse_term(args.term, today)
-    print(f"BLOCKED {exc} Read the class search page instead. {BROWSER_NOTE}")
+    print(f"BLOCKED {exc} {SCREENSHOT_NOTE}")
     if args.course:
         subject, catalog = parse_course(args.course)
         print(f"READ {COURSE_URL.format(subject=subject, catalog=catalog, term=term)}")
     else:
         print(f"READ {VIEW_URL.format(nbr=parse_class_nbr(args.cls), term=term)}")
-    print("For each section, read the class number, days and time, instructor and the \"Open seats: X of Y\" line.")
+    print("From the screenshot, read each section's class number, days and time, instructor and its "
+          "\"Open seats: X of Y\" line.")
 
 
 def blocked_compare(args, exc: Stop, today: date) -> None:
     term = parse_term(args.term, today)
-    print(f"BLOCKED {exc} Read each course's class search page instead. {BROWSER_NOTE}")
+    print(f"BLOCKED {exc} {SCREENSHOT_NOTE}")
     for subject, catalog in dict.fromkeys(parse_course(c) for c in args.course):
         print(f"READ {subject} {catalog}: {COURSE_URL.format(subject=subject, catalog=catalog, term=term)}")
-    print("For each course, note whether it's offered, its sections' instructors, and their \"Open seats\" lines.")
+    print("From the screenshots, note whether each course is offered, its instructors and its \"Open seats\" lines.")
 
 
 def blocked_watch_add(args, exc: Stop, today: date) -> None:
     term = parse_term(args.term, today)
-    print(f"BLOCKED {exc} Read each class's seats on the class search page instead. {BROWSER_NOTE}")
+    print(f"BLOCKED {exc} {SCREENSHOT_NOTE}")
     for nbr in dict.fromkeys(parse_class_nbr(c) for c in args.cls):
         print(f"READ #{nbr}: {VIEW_URL.format(nbr=nbr, term=term)}")
     print("Then run the same watch add command again, adding --seen <class number>=<open>/<total> for each class "
-          "(from its \"Open seats: X of Y\" line), like --seen 21671=0/110.")
+          "(from its \"Open seats: X of Y\" line in the screenshot), like --seen 21671=0/110.")
 
 
 def blocked_check(args, exc: Stop, today: date) -> None:
@@ -948,7 +950,7 @@ def cmd_check(args, today: date) -> int:
                 (x for x in fetch(w["term"], keywords=w["nbr"], sample=args.sample_path)["sections"]
                  if x["nbr"] == w["nbr"]), None)
     except Stop as exc:
-        if exc.code not in (EXIT_UNREACHABLE, EXIT_UNEXPECTED):
+        if exc.code not in (EXIT_UNREACHABLE, EXIT_UNEXPECTED, EXIT_BLOCKED):
             raise
         state["fail_streak"] = state.get("fail_streak", 0) + 1
         save_state(state, args.is_sample)

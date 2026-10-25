@@ -76,6 +76,7 @@ favorites already? Your picks win.
 *"Watch CSE 340 for spring."*
 
 Checks ASU **every 15 minutes** and alerts you the second a seat opens, with the add link ready to tap.
+<sub>ASU sometimes blocks these checks; see Honest limits.</sub>
 
 </td>
 </tr>
@@ -92,8 +93,8 @@ Checks ASU **every 15 minutes** and alerts you the second a seat opens, with the
 | 🌙 **No-call hours** | Pick a window like 11pm to 8am. Openings during it arrive as a text, not a 3 AM ring. |
 | 🔁 **One alert per opening** | Quiet while a seat stays open, and re-armed automatically if it fills and opens again. |
 | ⌛ **Stops on its own** | After the last day to add, when a section is cancelled, or when you say you got in. |
-| 🚨 **Never silently blind** | If ASU stops answering for an hour, you hear about it once. |
-| 🧯 **Built-in fallback** | If ASU turns Cubbie's servers away, it reads the public class search page in its own browser instead. |
+| 🚨 **Never silently blind** | If ASU blocks or ignores the checks for an hour, you hear about it once. |
+| 📸 **Screenshot mode** | ASU blocking Cubbie right now? Send a screenshot of Class Search from your phone and Cubbie reads the sections and seats from it. |
 | 🎬 **Test alert** | Text "send me a test alert" to see and hear exactly what an opening looks like. |
 | 🧠 **Remembers you** | Your major, alert style and no-call hours are asked once, then saved. |
 
@@ -163,6 +164,10 @@ python3 scripts/seats.py drill
 
 ## ⚠️ Honest limits
 
+- **ASU's class search blocks Cubbie's servers some of the time.** On Oct 24 the same live lookup worked at
+  6:14 PM and was blocked at 6:20 PM. Blocked checks stay quiet and retry every 15 minutes, and you're told once
+  if Seat Snipe has been blind for an hour, but a seat alert can't be guaranteed while ASU is blocking.
+  Screenshots always work.
 - ASU only, though it covers every campus and ASU Online.
 - Checks every 15 minutes, so a seat that opens and fills in between can be missed.
 - It can't see your holds, prerequisites, or whether you qualify for reserved seats.
