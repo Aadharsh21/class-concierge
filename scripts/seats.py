@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Seat Snipe: watch full Arizona State University classes and report when a seat opens.
+"""Class Concierge: watch full Arizona State University classes and report when a seat opens.
 
 Reads ASU's public class search: no sign-in, no key, standard library only.
 
@@ -42,7 +42,7 @@ VIEW_URL = "https://catalog.apps.asu.edu/catalog/classes/classlist?keywords={nbr
 COURSE_URL = ("https://catalog.apps.asu.edu/catalog/classes/classlist?campusOrOnlineSelection=A"
               "&catalogNbr={catalog}&honors=F&promod=F&searchType=all&subject={subject}&term={term}")
 ADD_URL = "https://go.oasis.asu.edu/addclass/?STRM={term}&ASU_CLASS_NBR={nbr}"
-USER_AGENT = ("seat-snipe/1.2 (Cubbie skill; one student's watch list, checks every 15 min; "
+USER_AGENT = ("class-concierge/1.2 (Cubbie skill; one student's watch list, checks every 15 min; "
               "+https://github.com/Aadharsh21/seat-snipe)")
 SKILL_DIR = Path(__file__).resolve().parent.parent
 SAMPLE_FILE = SKILL_DIR / "assets" / "sample_cse340_spring2027.json"
@@ -628,8 +628,8 @@ def wants_follow_up(state: dict, now_minutes: int | None) -> bool:
 
 def arm_follow_up(state: dict, labels: list[str]) -> None:
     state["follow_up"] = {"labels": labels, "since": datetime.now().isoformat(timespec="seconds")}
-    print(f"  follow-up: create a one-time check-in in {FOLLOW_UP_MINUTES} minutes with this task: \"Seat Snipe "
-          "follow-up: from the seat-snipe Skill's folder, run python3 scripts/seats.py followup and do what it "
+    print(f"  follow-up: create a one-time check-in in {FOLLOW_UP_MINUTES} minutes with this task: \"Class Concierge "
+          "follow-up: from the class-concierge Skill's folder, run python3 scripts/seats.py followup and do what it "
           "says.\" If the student replies before then, run python3 scripts/seats.py ack.")
 
 
@@ -1018,7 +1018,7 @@ def cmd_check(args, today: date) -> int:
     state = load_state(args.is_sample)
     watches = state["watches"]
     if not watches:
-        print("NO-WATCHES Nothing to watch, so the Seat Snipe check-in can be deleted.")
+        print("NO-WATCHES Nothing to watch, so the Class Concierge check-in can be deleted.")
         return 0
     if args.page_blocked:
         return cmd_page_blocked(args, state)
@@ -1167,7 +1167,7 @@ def cmd_check(args, today: date) -> int:
     state["watches"] = keep
     save_state(state, args.is_sample)
     if not keep:
-        print("NO-WATCHES Nothing left to watch, so the Seat Snipe check-in can be deleted.")
+        print("NO-WATCHES Nothing left to watch, so the Class Concierge check-in can be deleted.")
     print(f"SUMMARY checked {len(watches)} watched class{'es' if len(watches) != 1 else ''}: "
           f"{new_open} new opening{'s' if new_open != 1 else ''}.")
     return 0

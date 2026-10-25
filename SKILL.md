@@ -1,9 +1,9 @@
 ---
-name: seat-snipe
+name: class-concierge
 description: Recommends ASU classes and best-rated professors, sends Class Search links to pick sections, then tracks class numbers and alerts by text or call when a seat opens. Use when an Arizona State University student asks which classes to take next semester, what their major map requires, which electives or professors are easiest or best rated, asks to check or track a course or class number, says a class is full, asks to be told when a seat opens, asks whether the checks are going through, asks which classes are being watched, wants to change alerts or no-call hours, or wants a test seat alert. Not for study schedules or homework.
 ---
 
-# Seat Snipe
+# Class Concierge
 
 Helps an Arizona State University student get the classes they need: it reads their major map to say what next
 semester should look like and suggests the easiest electives and best-rated professors from student reviews. For
@@ -12,7 +12,7 @@ back the class numbers they want. Then it watches those class numbers and alerts
 covers every ASU campus and ASU Online, and only ASU.
 
 It never enrolls, drops or swaps classes for the student: My ASU needs their own sign-in. It sends the add
-link and the student adds the class themselves. Course choices are the student's; Seat Snipe only suggests.
+link and the student adds the class themselves. Course choices are the student's; Class Concierge only suggests.
 
 ## When to use
 
@@ -37,6 +37,14 @@ section 7.
 Run every command from this Skill's folder. `scripts/seats.py` reads ASU's public class search: no sign-in and
 no key. It keeps the watch list and the student's alert choice under `~/.config/seat-snipe/`, so they carry
 over between conversations.
+
+### Updating an existing installation
+
+This Skill was previously named Seat Snipe (`seat-snipe`). Keep the existing
+`~/.config/seat-snipe/` data directory so watches and preferences survive the rename.
+If an older installed copy exists, replace it with this Skill rather than leaving two active copies.
+Reuse any existing Seat Snipe recurring check-in: rename it Class Concierge and update its task to run
+from this installed Skill's folder. Update pending follow-up tasks the same way; never create duplicate schedules.
 
 ### 1. A course: send the Class Search link
 
@@ -113,8 +121,8 @@ The student picks sections on their own phone, where ASU's Class Search always w
    python3 scripts/seats.py watch add --term "<term>" --course "<LECTURE COURSE>" --course "<LAB COURSE>" --class <lecture number> --class <lab number> --together
    ```
 
-4. If there is no Seat Snipe check-in yet, create one recurring check-in that runs every 15 minutes, with this task:
-   "Seat Snipe: from the seat-snipe Skill's folder, run `python3 scripts/seats.py check` and follow the
+4. If there is no Class Concierge check-in yet, create one recurring check-in that runs every 15 minutes, with this task:
+   "Class Concierge: from the class-concierge Skill's folder, run `python3 scripts/seats.py check` and follow the
    Scheduled check steps in its SKILL.md. Contact the student only when those steps say to."
    One check-in covers every watched class, so never create a second one.
 5. Reply in one or two lines: what is being watched, how you'll alert them, and that they can ask "are the checks
@@ -150,7 +158,7 @@ Run `python3 scripts/seats.py check` and act only on these lines:
   search). Text the student once.
 - `WARN`: ASU's class search has blocked or ignored the last several checks. Text the student once that you're
   still trying, and that a screenshot of Class Search from their phone works in the meantime (section 7).
-- `NO-WATCHES`: nothing is left to watch. Delete this Seat Snipe check-in and don't text the student.
+- `NO-WATCHES`: nothing is left to watch. Delete this Class Concierge check-in and don't text the student.
 
 Anything else (`FULL`, `RESERVED`, `STILL-OPEN`, `PARTLY-OPEN`, `PARTLY-READ`, `UNREAD`, `MISSING`, `FAILED`,
 `SUMMARY`) needs no message: stay silent. A blocked check prints `FAILED`; the next check simply tries again. `PARTLY-OPEN` means only part of a set has a seat, which the student
@@ -170,11 +178,11 @@ again they hear about it again.
 - "Are the checks going through?", "is it working?": `python3 scripts/seats.py history`. Relay it plainly, like
   "3 of the last 4 checks got through to ASU; the last one 6 minutes ago." The times also show whether checks really
   run every 15 minutes. `watch list` ends with the same summary.
-- Whenever a command prints `NO-WATCHES`, delete the Seat Snipe check-in.
+- Whenever a command prints `NO-WATCHES`, delete the Class Concierge check-in.
 
 ### 5. Test alert
 
-When the student wants to see what an alert looks like ("send me a test alert", "test seat snipe"), run
+When the student wants to see what an alert looks like ("send me a test alert", "test class concierge"), run
 `python3 scripts/seats.py drill`. It prints a `NEW-OPEN` line built from saved sample data, without touching the
 network or the watch list. Handle it exactly like a real `NEW-OPEN`, following its `alert by` line (no-call hours
 included, so the student sees exactly what would happen right now), but start the call and the text with

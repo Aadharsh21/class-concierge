@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🎯 Seat Snipe
+# 🎯 Class Concierge
 
 ### Stop refreshing Class Search. Text Cubbie instead.
 
@@ -15,7 +15,7 @@
 
 <br/>
 
-<img src="assets/readme/demo.svg" width="100%" alt="Three phone screens. Plan: Cubbie reads your major map and lists next semester's courses. Watch: you ask it to watch a full CSE 340 section and pick how to be alerted. Snipe: a seat opens, Cubbie texts the add link, then calls when you don't reply."/>
+<img src="assets/readme/demo.svg" width="100%" alt="Three phone screens. Plan: Cubbie reads your major map and lists next semester's courses. Watch: you ask it to watch a full CSE 340 section and pick how to be alerted. Enroll: a seat opens, Cubbie texts the add link, then calls when you don't reply."/>
 
 <sub>Illustration of the flow. The output below is real.</sub>
 
@@ -28,7 +28,7 @@
 Registration opens and the section you need says **0 open seats**. So you refresh Class Search in lecture, in line
 for coffee, at 1 AM. When a seat finally frees up, it goes to whoever happened to refresh at that moment.
 
-Seat Snipe makes sure that's you.
+Class Concierge makes sure that's you.
 
 ## 🧾 Real output, not a mockup
 
@@ -43,7 +43,7 @@ CSE 412 Database Management, Spring 2027 (term 2271): 4 sections, 0 full
 ```
 
 See **"9 open, plus 126 reserved"**? Capacity minus enrolled would say 135 open seats. But 126 of them are held for
-specific groups of students, so only 9 are actually up for grabs. Seat Snipe tells you which number is real.
+specific groups of students, so only 9 are actually up for grabs. Class Concierge tells you which number is real.
 
 ## ✨ What it does
 
@@ -71,7 +71,7 @@ for each course so you pick the exact section on your phone. Got favorites alrea
 </td>
 <td width="33%" valign="top">
 
-### 🎯 Snipe
+### 🎯 Catch an opening
 
 *"Track 21671."*
 
@@ -143,7 +143,7 @@ Then try any of these:
 ## 🔧 Under the hood
 
 ```text
-seat-snipe/
+class-concierge/
 ├── SKILL.md             what Cubbie reads: when to use it, every step, reply style, failure handling
 ├── scripts/seats.py     link · search · compare · watch · check · history · alerts · drill · ack · followup · diagnose
 ├── tests/               unit tests for how ASU's answers and failures are handled
@@ -173,7 +173,7 @@ python3 scripts/seats.py drill
 
 - **ASU's class search blocks Cubbie's servers some of the time.** On Oct 24 the same live lookup worked at
   6:14 PM and was blocked at 6:20 PM. Blocked checks stay quiet and retry every 15 minutes, and you're told once
-  if Seat Snipe has been blind for an hour, but a seat alert can't be guaranteed while ASU is blocking.
+  if Class Concierge has been blind for an hour, but a seat alert can't be guaranteed while ASU is blocking.
   Screenshots always work.
 - ASU only, though it covers every campus and ASU Online.
 - Checks every 15 minutes, so a seat that opens and fills in between can be missed.
@@ -188,12 +188,16 @@ Built at **DevHacks Fall 2026** for the [Cubbie Hackathon](https://hackathon.cub
 
 **Credits:** seat data comes from ASU's public class search. Thanks to
 [rajkumaar23/asu-course-notifier](https://github.com/rajkumaar23/asu-course-notifier) for documenting how it
-answers. Seat Snipe is a student project, not affiliated with Arizona State University or Rate My Professors.
+answers. Class Concierge is a student project, not affiliated with Arizona State University or Rate My Professors.
 
 ---
 
 <div align="center">
 
-**Like it? [Vote for Seat Snipe on hackathon.cubbie.ai →](https://hackathon.cubbie.ai/#gallery)**
+**Like it? [Vote for Class Concierge on hackathon.cubbie.ai →](https://hackathon.cubbie.ai/#gallery)**
 
 </div>
+
+The project is now Class Concierge. The existing repository link remains the install link.
+Saved watches and preferences continue using `~/.config/seat-snipe/` for compatibility.
+When updating, Cubbie should reuse and rename existing check-ins rather than create duplicates.
