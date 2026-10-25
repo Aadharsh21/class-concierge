@@ -35,6 +35,8 @@ from pathlib import Path
 
 API_URL = "https://eadvs-cscc-catalog-api.apps.asu.edu/catalog-microservices/api/v1/search/classes"
 VIEW_URL = "https://catalog.apps.asu.edu/catalog/classes/classlist?keywords={nbr}&searchType=all&term={term}"
+COURSE_URL = ("https://catalog.apps.asu.edu/catalog/classes/classlist?campusOrOnlineSelection=A"
+              "&catalogNbr={catalog}&honors=F&promod=F&searchType=all&subject={subject}&term={term}")
 ADD_URL = "https://go.oasis.asu.edu/addclass/?STRM={term}&ASU_CLASS_NBR={nbr}"
 USER_AGENT = "Mozilla/5.0 (compatible; seat-snipe/1.0; +https://github.com/Aadharsh21/seat-snipe)"
 SKILL_DIR = Path(__file__).resolve().parent.parent
@@ -45,7 +47,7 @@ WARN_AGAIN_AFTER = 96   # about a day of failed checks
 MISSING_LIMIT = 4       # checks in a row a watched class can be missing before watching stops
 DEFAULT_LIMIT = 12      # sections a search prints
 
-EXIT_INPUT, EXIT_NOT_FOUND, EXIT_UNREACHABLE, EXIT_UNEXPECTED = 2, 3, 4, 5
+EXIT_INPUT, EXIT_NOT_FOUND, EXIT_UNREACHABLE, EXIT_UNEXPECTED, EXIT_BLOCKED = 2, 3, 4, 5, 6
 
 SEASONS = {"spring": "1", "sp": "1", "summer": "4", "sum": "4", "su": "4", "fall": "7", "fa": "7", "autumn": "7"}
 SEASON_NAMES = {"1": "Spring", "4": "Summer", "7": "Fall"}
@@ -151,14 +153,18 @@ def request_json(url: str):
             break
         except urllib.error.HTTPError as exc:
             if exc.code in (401, 403):
-                raise Stop(EXIT_UNEXPECTED, f"ASU's class search now refuses anonymous lookups (HTTP {exc.code}); "
-                                            "the seat checker needs an update.") from None
+                server = (exc.headers.get("Server") or "").strip() if exc.headers else ""
+                raise Stop(EXIT_BLOCKED, f"ASU's class search turned this computer away (HTTP {exc.code}"
+                                         f"{', server ' + server if server else ''}).") from None
             if exc.code != 429 and exc.code < 500:
                 raise Stop(EXIT_UNEXPECTED, f"ASU's class search answered HTTP {exc.code}; "
                                             "the seat checker needs an update.") from None
             problem = f"HTTP {exc.code}"
         except (urllib.error.URLError, TimeoutError, OSError) as exc:
             problem = str(getattr(exc, "reason", exc))
+            if "tunnel connection failed" in problem.lower():  # this computer's own network refused, not ASU
+                raise Stop(EXIT_BLOCKED, f"This computer's network won't connect to ASU's class search ({problem}).") \
+                    from None
         if attempt == 0:
             time.sleep(3)
     else:
@@ -272,6 +278,76 @@ def parse_section(raw) -> dict | None:
         "status": status,
         "deadline": str(clas.get("ENROLLDEADLINE") or "")[:10],
     }
+
+
+# ---------- seats read in Cubbie's browser, for when ASU turns the script away ----------
+
+def parse_seen_list(values: list[str] | None) -> dict[str, tuple[int, int]]:
+    """--seen 21671=2/110 means the browser showed "Open seats: 2 of 110" for class 21671."""
+    seen: dict[str, tuple[int, int]] = {}
+    for value in values or []:
+        m = re.fullmatch(r"\s*#?(\d{4,6})\s*=\s*(\d+)\s*(?:/|of)\s*(\d+)\s*", value or "")
+        if not m:
+            raise Stop(EXIT_INPUT, f"Couldn't read --seen {value!r}. Use <class number>=<open>/<total>, like 21671=0/110.")
+        open_, total = int(m.group(2)), int(m.group(3))
+        if open_ > total:
+            raise Stop(EXIT_INPUT, f"--seen {value!r} has more open seats than total seats.")
+        seen[m.group(1)] = (open_, total)
+    return seen
+
+
+def seen_section(term: str, nbr: str, subject: str, catalog: str, open_: int, total: int,
+                 label: str | None = None) -> dict:
+    """A section built from numbers read off the class search page instead of ASU's data feed."""
+    return {"nbr": nbr, "term": term, "subject": subject, "catalog": catalog, "section": "", "title": "",
+            "session": "", "start_date": "", "campus": "", "mode": "", "days": "", "start": "", "end": "",
+            "room": "", "instructors": ["Staff"], "kind": "", "cap": total, "taken": max(total - open_, 0),
+            "open": open_, "open_reserved": 0, "status": "OPEN" if open_ > 0 else "FULL", "deadline": "",
+            "synthetic": True, "label": label or (f"#{nbr} {subject} {catalog}".strip() if subject else f"#{nbr}")}
+
+
+def label_of(s: dict) -> str:
+    return s["label"] if s.get("synthetic") else short_label(s)
+
+
+BROWSER_NOTE = "Open it in the browser (the page needs JavaScript; a plain web read shows no seats)."
+
+
+def blocked_search(args, exc: Stop, today: date) -> None:
+    term = parse_term(args.term, today)
+    print(f"BLOCKED {exc} Read the class search page instead. {BROWSER_NOTE}")
+    if args.course:
+        subject, catalog = parse_course(args.course)
+        print(f"READ {COURSE_URL.format(subject=subject, catalog=catalog, term=term)}")
+    else:
+        print(f"READ {VIEW_URL.format(nbr=parse_class_nbr(args.cls), term=term)}")
+    print("For each section, read the class number, days and time, instructor and the \"Open seats: X of Y\" line.")
+
+
+def blocked_compare(args, exc: Stop, today: date) -> None:
+    term = parse_term(args.term, today)
+    print(f"BLOCKED {exc} Read each course's class search page instead. {BROWSER_NOTE}")
+    for subject, catalog in dict.fromkeys(parse_course(c) for c in args.course):
+        print(f"READ {subject} {catalog}: {COURSE_URL.format(subject=subject, catalog=catalog, term=term)}")
+    print("For each course, note whether it's offered, its sections' instructors, and their \"Open seats\" lines.")
+
+
+def blocked_watch_add(args, exc: Stop, today: date) -> None:
+    term = parse_term(args.term, today)
+    print(f"BLOCKED {exc} Read each class's seats on the class search page instead. {BROWSER_NOTE}")
+    for nbr in dict.fromkeys(parse_class_nbr(c) for c in args.cls):
+        print(f"READ #{nbr}: {VIEW_URL.format(nbr=nbr, term=term)}")
+    print("Then run the same watch add command again, adding --seen <class number>=<open>/<total> for each class "
+          "(from its \"Open seats: X of Y\" line), like --seen 21671=0/110.")
+
+
+def blocked_check(args, exc: Stop, today: date) -> None:
+    state = load_state(args.is_sample)
+    print(f"BLOCKED {exc} Read each watched class on the class search page instead. {BROWSER_NOTE}")
+    for w in state["watches"]:
+        print(f"READ {w['label']}: {VIEW_URL.format(nbr=w['nbr'], term=w['term'])}")
+    print("Then run: check --seen <class number>=<open>/<total> with one --seen per class you read (from its "
+          "\"Open seats: X of Y\" line), like --seen 21671=0/110, and act on those lines as usual.")
 
 
 # ---------- wording ----------
@@ -520,7 +596,7 @@ def cmd_compare(args, today: date) -> int:
             sections = [s for s in fetch(term, subject=subject, catalog=catalog, sample=args.sample_path)["sections"]
                         if s["subject"] == subject and s["catalog"] == catalog]
         except Stop as exc:
-            if exc.code == EXIT_UNREACHABLE:
+            if exc.code in (EXIT_UNREACHABLE, EXIT_BLOCKED):
                 raise
             print(f"{subject} {catalog}: couldn't check ({exc})")
             continue
@@ -591,15 +667,22 @@ def cmd_watch_add(args, today: date) -> int:
     if args.together and len(nbrs) < 2:
         raise Stop(EXIT_INPUT, "--together needs at least two class numbers, like a lecture and its lab.")
     found: dict[str, dict] = {}
-    for subject, catalog in dict.fromkeys(parse_course(c) for c in args.course or []):
-        for s in fetch(term, subject=subject, catalog=catalog, sample=args.sample_path)["sections"]:
-            if s["nbr"] in nbrs:
-                found[s["nbr"]] = s
-    for nbr in nbrs:
-        if nbr not in found:
-            for s in fetch(term, keywords=nbr, sample=args.sample_path)["sections"]:
-                if s["nbr"] == nbr:
-                    found[nbr] = s
+    courses = list(dict.fromkeys(parse_course(c) for c in args.course or []))
+    for nbr, (open_, total) in parse_seen_list(args.seen).items():  # read off the page in Cubbie's browser
+        if nbr in nbrs:
+            subject, catalog = courses[0] if len(courses) == 1 else ("", "")
+            found[nbr] = seen_section(term, nbr, subject, catalog, open_, total)
+    todo = [n for n in nbrs if n not in found]
+    if todo:
+        for subject, catalog in courses:
+            for s in fetch(term, subject=subject, catalog=catalog, sample=args.sample_path)["sections"]:
+                if s["nbr"] in todo:
+                    found[s["nbr"]] = s
+        for nbr in todo:
+            if nbr not in found:
+                for s in fetch(term, keywords=nbr, sample=args.sample_path)["sections"]:
+                    if s["nbr"] == nbr:
+                        found[nbr] = s
     missing = [n for n in nbrs if n not in found]
     if not found:
         raise Stop(EXIT_NOT_FOUND, f"Couldn't find class #{', #'.join(missing)} for {term_label(term)}. "
@@ -618,7 +701,7 @@ def cmd_watch_add(args, today: date) -> int:
         if s is None:
             print(f"NOT-FOUND #{nbr} isn't on ASU's class search for {term_label(term)}; not watching it.")
             continue
-        label = short_label(s)
+        label = label_of(s)
         if s["status"] == "CANCELLED":
             print(f"ENDED {label} is cancelled; not watching it.")
             continue
@@ -760,9 +843,19 @@ def cmd_check(args, today: date) -> int:
         return 0
 
     found: dict[tuple[str, str], dict | None] = {}
+    seen = parse_seen_list(args.seen)
     groups: dict[tuple[str, str, str], list[dict]] = {}
+    singles: list[dict] = []
     for w in watches:
-        groups.setdefault((w["term"], w["subject"], w["catalog"]), []).append(w)
+        if seen:
+            if w["nbr"] in seen:
+                open_, total = seen[w["nbr"]]
+                found[(w["term"], w["nbr"])] = seen_section(w["term"], w["nbr"], w["subject"], w["catalog"],
+                                                            open_, total, w["label"])
+        elif w.get("subject") and w.get("catalog"):
+            groups.setdefault((w["term"], w["subject"], w["catalog"]), []).append(w)
+        else:
+            singles.append(w)
     try:
         for (term, subject, catalog), group in groups.items():
             result = fetch(term, subject=subject, catalog=catalog, sample=args.sample_path)
@@ -774,6 +867,10 @@ def cmd_check(args, today: date) -> int:
                     s = next((x for x in fetch(term, keywords=w["nbr"], sample=args.sample_path)["sections"]
                               if x["nbr"] == w["nbr"]), None)
                 found[(w["term"], w["nbr"])] = s
+        for w in singles:
+            found[(w["term"], w["nbr"])] = next(
+                (x for x in fetch(w["term"], keywords=w["nbr"], sample=args.sample_path)["sections"]
+                 if x["nbr"] == w["nbr"]), None)
     except Stop as exc:
         if exc.code not in (EXIT_UNREACHABLE, EXIT_UNEXPECTED):
             raise
@@ -798,6 +895,10 @@ def cmd_check(args, today: date) -> int:
             print(f"ENDED {label}: the last day to add it ({pretty_date(w['deadline'])}) has passed, "
                   "so watching stopped.")
             continue
+        if seen and w["nbr"] not in seen:
+            print(f"UNREAD {label} wasn't read this time (stay quiet)")
+            keep.append(w)
+            continue
         s = found.get((w["term"], w["nbr"]))
         if s is None:
             w["missing"] = w.get("missing", 0) + 1
@@ -808,15 +909,16 @@ def cmd_check(args, today: date) -> int:
             keep.append(w)
             continue
         w["missing"] = 0
-        w["label"] = short_label(s)
+        if not s.get("synthetic"):
+            w["label"] = short_label(s)
         if s["status"] == "CANCELLED":
             print(f"ENDED {w['label']} was cancelled by ASU, so watching stopped.")
             continue
         rows.append((w, s, w.get("last_status"), s["status"]))
         keep.append(w)
 
-    sizes: dict[str, int] = {}
-    for w, *_ in rows:
+    sizes: dict[str, int] = {}  # members of each set still being watched, read this time or not
+    for w in keep:
         if w.get("group"):
             sizes[w["group"]] = sizes.get(w["group"], 0) + 1
     handled: set[str] = set()
@@ -829,6 +931,9 @@ def cmd_check(args, today: date) -> int:
             handled.add(group)
             members = [row for row in rows if row[0].get("group") == group]
             names = " and ".join(m[0]["label"] for m in members)
+            if len(members) < sizes[group]:
+                print(f"PARTLY-READ {names}: the rest of the set wasn't read this time (stay quiet)")
+                continue
             all_open_now = all(m[3] == "OPEN" for m in members)
             all_open_before = all(m[2] == "OPEN" for m in members)
             if all_open_now and not all_open_before:
@@ -893,14 +998,14 @@ def build_parser() -> argparse.ArgumentParser:
     search.add_argument("--instructor", help="part of the instructor's name")
     search.add_argument("--limit", type=int, default=DEFAULT_LIMIT, help="sections to print")
     search.add_argument("--links", action="store_true", help="print the add and view links for each section")
-    search.set_defaults(func=cmd_search)
+    search.set_defaults(func=cmd_search, on_blocked=blocked_search)
 
     compare = sub.add_parser("compare", parents=[common],
                              help="one line per course: offered or not, how full, and who teaches it")
     compare.add_argument("--term", default="next", help='"spring 2027", "fall", "next" or a code like 2271')
     compare.add_argument("--course", action="append", required=True, help='like "CSE 340"; repeat for more')
     compare.add_argument("--campus", help="tempe, poly, west, downtown, online or any")
-    compare.set_defaults(func=cmd_compare)
+    compare.set_defaults(func=cmd_compare, on_blocked=blocked_compare)
 
     watch = sub.add_parser("watch", help="add, list or remove watched classes")
     watch_sub = watch.add_subparsers(dest="action", required=True)
@@ -912,7 +1017,9 @@ def build_parser() -> argparse.ArgumentParser:
     add.add_argument("--together", action="store_true",
                      help="the student needs all of these (like a lecture and its lab): alert only when all have seats")
     add.add_argument("--alert", help="how the student wants to hear about an opening: text, call or both")
-    add.set_defaults(func=cmd_watch_add)
+    add.add_argument("--seen", action="append",
+                     help="seats read on the class search page, as <class number>=<open>/<total>; repeat for more")
+    add.set_defaults(func=cmd_watch_add, on_blocked=blocked_watch_add)
     lst = watch_sub.add_parser("list", parents=[common], help="show what is being watched")
     lst.set_defaults(func=cmd_watch_list)
     rm = watch_sub.add_parser("remove", parents=[common], help="stop watching classes")
@@ -921,7 +1028,9 @@ def build_parser() -> argparse.ArgumentParser:
     rm.set_defaults(func=cmd_watch_remove)
 
     check = sub.add_parser("check", parents=[common], help="check every watched class once (the scheduled check)")
-    check.set_defaults(func=cmd_check)
+    check.add_argument("--seen", action="append",
+                       help="seats read on the class search page, as <class number>=<open>/<total>; repeat for more")
+    check.set_defaults(func=cmd_check, on_blocked=blocked_check)
 
     drill = sub.add_parser("drill", parents=[common], help="print a test alert from the saved sample data")
     drill.set_defaults(func=cmd_drill)
@@ -942,9 +1051,18 @@ def main(argv: list[str] | None = None) -> int:
         args.sample_path = None
     args.is_sample = args.sample_path is not None
     try:
-        return args.func(args, parse_today(args.today)) or 0
+        today = parse_today(args.today)
+        return args.func(args, today) or 0
     except Stop as exc:
-        print(exc)
+        on_blocked = getattr(args, "on_blocked", None)
+        if exc.code == EXIT_BLOCKED and on_blocked:
+            try:
+                on_blocked(args, exc, today)
+            except Stop as inner:
+                print(f"BLOCKED {exc}")
+                print(inner)
+        else:
+            print(exc)
         return exc.code
 
 

@@ -66,6 +66,9 @@ Cubbie: Seat open in CSE 340 (#21671, Claveau)! 2 seats left.
   (total minus taken, minus seats reserved for other groups), and remembers what it last saw under
   `~/.config/seat-snipe/`, so you get one alert per opening instead of one every 15 minutes.
 
+- If ASU's class search refuses requests from Cubbie's servers, Cubbie opens the same public class search page in
+  its own browser, reads the "Open seats" numbers, and passes them to the script, so alerts work the same way.
+
 Try the script on its own with the saved sample data, no network needed:
 
 ```bash
