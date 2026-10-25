@@ -1,0 +1,227 @@
+diff --git a/README.md b/README.md
+index daad2be..fc1b5bc 100644
+--- a/README.md
++++ b/README.md
+@@ -1,6 +1,6 @@
+ <div align="center">
+ 
+-# 🎯 Seat Snipe
++# 🎯 Class Concierge
+ 
+ ### Stop refreshing Class Search. Text Cubbie instead.
+ 
+@@ -15,7 +15,7 @@
+ 
+ <br/>
+ 
+-<img src="assets/readme/demo.svg" width="100%" alt="Three phone screens. Plan: Cubbie reads your major map and lists next semester's courses. Watch: you ask it to watch a full CSE 340 section and pick how to be alerted. Snipe: a seat opens, Cubbie texts the add link, then calls when you don't reply."/>
++<img src="assets/readme/demo.svg" width="100%" alt="Three phone screens. Plan: Cubbie reads your major map and lists next semester's courses. Watch: you ask it to watch a full CSE 340 section and pick how to be alerted. Enroll: a seat opens, Cubbie texts the add link, then calls when you don't reply."/>
+ 
+ <sub>Illustration of the flow. The output below is real.</sub>
+ 
+@@ -28,7 +28,7 @@
+ Registration opens and the section you need says **0 open seats**. So you refresh Class Search in lecture, in line
+ for coffee, at 1 AM. When a seat finally frees up, it goes to whoever happened to refresh at that moment.
+ 
+-Seat Snipe makes sure that's you.
++Class Concierge makes sure that's you.
+ 
+ ## 🧾 Real output, not a mockup
+ 
+@@ -43,7 +43,7 @@ CSE 412 Database Management, Spring 2027 (term 2271): 4 sections, 0 full
+ ```
+ 
+ See **"9 open, plus 126 reserved"**? Capacity minus enrolled would say 135 open seats. But 126 of them are held for
+-specific groups of students, so only 9 are actually up for grabs. Seat Snipe tells you which number is real.
++specific groups of students, so only 9 are actually up for grabs. Class Concierge tells you which number is real.
+ 
+ ## ✨ What it does
+ 
+@@ -71,7 +71,7 @@ for each course so you pick the exact section on your phone. Got favorites alrea
+ </td>
+ <td width="33%" valign="top">
+ 
+-### 🎯 Snipe
++### 🎯 Catch an opening
+ 
+ *"Track 21671."*
+ 
+@@ -143,7 +143,7 @@ Then try any of these:
+ ## 🔧 Under the hood
+ 
+ ```text
+-seat-snipe/
++class-concierge/
+ ├── SKILL.md             what Cubbie reads: when to use it, every step, reply style, failure handling
+ ├── scripts/seats.py     link · search · compare · watch · check · history · alerts · drill · ack · followup · diagnose
+ ├── tests/               unit tests for how ASU's answers and failures are handled
+@@ -173,7 +173,7 @@ python3 scripts/seats.py drill
+ 
+ - **ASU's class search blocks Cubbie's servers some of the time.** On Oct 24 the same live lookup worked at
+   6:14 PM and was blocked at 6:20 PM. Blocked checks stay quiet and retry every 15 minutes, and you're told once
+-  if Seat Snipe has been blind for an hour, but a seat alert can't be guaranteed while ASU is blocking.
++  if Class Concierge has been blind for an hour, but a seat alert can't be guaranteed while ASU is blocking.
+   Screenshots always work.
+ - ASU only, though it covers every campus and ASU Online.
+ - Checks every 15 minutes, so a seat that opens and fills in between can be missed.
+@@ -188,12 +188,16 @@ Built at **DevHacks Fall 2026** for the [Cubbie Hackathon](https://hackathon.cub
+ 
+ **Credits:** seat data comes from ASU's public class search. Thanks to
+ [rajkumaar23/asu-course-notifier](https://github.com/rajkumaar23/asu-course-notifier) for documenting how it
+-answers. Seat Snipe is a student project, not affiliated with Arizona State University or Rate My Professors.
++answers. Class Concierge is a student project, not affiliated with Arizona State University or Rate My Professors.
+ 
+ ---
+ 
+ <div align="center">
+ 
+-**Like it? [Vote for Seat Snipe on hackathon.cubbie.ai →](https://hackathon.cubbie.ai/#gallery)**
++**Like it? [Vote for Class Concierge on hackathon.cubbie.ai →](https://hackathon.cubbie.ai/#gallery)**
+ 
+ </div>
++
++The project is now Class Concierge. The existing repository link remains the install link.
++Saved watches and preferences continue using `~/.config/seat-snipe/` for compatibility.
++When updating, Cubbie should reuse and rename existing check-ins rather than create duplicates.
+diff --git a/SKILL.md b/SKILL.md
+index e1d45c2..5477151 100644
+--- a/SKILL.md
++++ b/SKILL.md
+@@ -1,9 +1,9 @@
+ ---
+-name: seat-snipe
++name: class-concierge
+ description: Recommends ASU classes and best-rated professors, sends Class Search links to pick sections, then tracks class numbers and alerts by text or call when a seat opens. Use when an Arizona State University student asks which classes to take next semester, what their major map requires, which electives or professors are easiest or best rated, asks to check or track a course or class number, says a class is full, asks to be told when a seat opens, asks whether the checks are going through, asks which classes are being watched, wants to change alerts or no-call hours, or wants a test seat alert. Not for study schedules or homework.
+ ---
+ 
+-# Seat Snipe
++# Class Concierge
+ 
+ Helps an Arizona State University student get the classes they need: it reads their major map to say what next
+ semester should look like and suggests the easiest electives and best-rated professors from student reviews. For
+@@ -12,7 +12,7 @@ back the class numbers they want. Then it watches those class numbers and alerts
+ covers every ASU campus and ASU Online, and only ASU.
+ 
+ It never enrolls, drops or swaps classes for the student: My ASU needs their own sign-in. It sends the add
+-link and the student adds the class themselves. Course choices are the student's; Seat Snipe only suggests.
++link and the student adds the class themselves. Course choices are the student's; Class Concierge only suggests.
+ 
+ ## When to use
+ 
+@@ -38,6 +38,14 @@ Run every command from this Skill's folder. `scripts/seats.py` reads ASU's publi
+ no key. It keeps the watch list and the student's alert choice under `~/.config/seat-snipe/`, so they carry
+ over between conversations.
+ 
++### Updating an existing installation
++
++This Skill was previously named Seat Snipe (`seat-snipe`). Keep the existing
++`~/.config/seat-snipe/` data directory so watches and preferences survive the rename.
++If an older installed copy exists, replace it with this Skill rather than leaving two active copies.
++Reuse any existing Seat Snipe recurring check-in: rename it Class Concierge and update its task to run
++from this installed Skill's folder. Update pending follow-up tasks the same way; never create duplicate schedules.
++
+ ### 1. A course: send the Class Search link
+ 
+ The student picks sections on their own phone, where ASU's Class Search always works.
+@@ -113,8 +121,8 @@ The student picks sections on their own phone, where ASU's Class Search always w
+    python3 scripts/seats.py watch add --term "<term>" --course "<LECTURE COURSE>" --course "<LAB COURSE>" --class <lecture number> --class <lab number> --together
+    ```
+ 
+-4. If there is no Seat Snipe check-in yet, create one recurring check-in that runs every 15 minutes, with this task:
+-   "Seat Snipe: from the seat-snipe Skill's folder, run `python3 scripts/seats.py check` and follow the
++4. If there is no Class Concierge check-in yet, create one recurring check-in that runs every 15 minutes, with this task:
++   "Class Concierge: from the class-concierge Skill's folder, run `python3 scripts/seats.py check` and follow the
+    Scheduled check steps in its SKILL.md. Contact the student only when those steps say to."
+    One check-in covers every watched class, so never create a second one.
+ 5. Reply in one or two lines: what is being watched, how you'll alert them, and that they can ask "are the checks
+@@ -150,7 +158,7 @@ Run `python3 scripts/seats.py check` and act only on these lines:
+   search). Text the student once.
+ - `WARN`: ASU's class search has blocked or ignored the last several checks. Text the student once that you're
+   still trying, and that a screenshot of Class Search from their phone works in the meantime (section 7).
+-- `NO-WATCHES`: nothing is left to watch. Delete this Seat Snipe check-in and don't text the student.
++- `NO-WATCHES`: nothing is left to watch. Delete this Class Concierge check-in and don't text the student.
+ 
+ Anything else (`FULL`, `RESERVED`, `STILL-OPEN`, `PARTLY-OPEN`, `PARTLY-READ`, `UNREAD`, `MISSING`, `FAILED`,
+ `SUMMARY`) needs no message: stay silent. A blocked check prints `FAILED`; the next check simply tries again. `PARTLY-OPEN` means only part of a set has a seat, which the student
+@@ -170,11 +178,11 @@ again they hear about it again.
+ - "Are the checks going through?", "is it working?": `python3 scripts/seats.py history`. Relay it plainly, like
+   "3 of the last 4 checks got through to ASU; the last one 6 minutes ago." The times also show whether checks really
+   run every 15 minutes. `watch list` ends with the same summary.
+-- Whenever a command prints `NO-WATCHES`, delete the Seat Snipe check-in.
++- Whenever a command prints `NO-WATCHES`, delete the Class Concierge check-in.
+ 
+ ### 5. Test alert
+ 
+-When the student wants to see what an alert looks like ("send me a test alert", "test seat snipe"), run
++When the student wants to see what an alert looks like ("send me a test alert", "test class concierge"), run
+ `python3 scripts/seats.py drill`. It prints a `NEW-OPEN` line built from saved sample data, without touching the
+ network or the watch list. Handle it exactly like a real `NEW-OPEN`, following its `alert by` line (no-call hours
+ included, so the student sees exactly what would happen right now), but start the call and the text with
+diff --git a/assets/readme/demo.svg b/assets/readme/demo.svg
+index 897a55b..649724e 100644
+--- a/assets/readme/demo.svg
++++ b/assets/readme/demo.svg
+@@ -1,4 +1,4 @@
+-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 630" width="960" height="630" role="img" aria-label="Seat Snipe in three steps: plan from your major map, watch a full class, get a text and then a call when a seat opens">
++<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 630" width="960" height="630" role="img" aria-label="Class Concierge in three steps: plan from your major map, watch a full class, get a text and then a call when a seat opens">
+ <defs><linearGradient id="cubbie" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5ac8fa"/><stop offset="1" stop-color="#0a5bd6"/></linearGradient></defs>
+ <g font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+ <rect x="124.0" y="8" width="92" height="26" rx="13" fill="#0a84ff"/>
+@@ -60,7 +60,7 @@
+ </g>
+ <g font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+ <rect x="744.0" y="8" width="92" height="26" rx="13" fill="#0a84ff"/>
+-<text x="790.0" y="26" fill="#ffffff" font-size="12" font-weight="700" text-anchor="middle" letter-spacing="1.2">3  SNIPE</text>
++<text x="790.0" y="26" fill="#ffffff" font-size="12" font-weight="700" text-anchor="middle" letter-spacing="1.2">3  ENROLL</text>
+ <rect x="660" y="52" width="260" height="540" rx="40" fill="#1c1c1e" stroke="#3a3a3c" stroke-width="2"/>
+ <rect x="668" y="60" width="244" height="524" rx="33" fill="#000000"/>
+ <rect x="756" y="70" width="68" height="20" rx="10" fill="#1c1c1e"/>
+diff --git a/scripts/seats.py b/scripts/seats.py
+index 0af9379..54c94ad 100644
+--- a/scripts/seats.py
++++ b/scripts/seats.py
+@@ -1,5 +1,5 @@
+ #!/usr/bin/env python3
+-"""Seat Snipe: watch full Arizona State University classes and report when a seat opens.
++"""Class Concierge: watch full Arizona State University classes and report when a seat opens.
+ 
+ Reads ASU's public class search: no sign-in, no key, standard library only.
+ 
+@@ -42,7 +42,7 @@ VIEW_URL = "https://catalog.apps.asu.edu/catalog/classes/classlist?keywords={nbr
+ COURSE_URL = ("https://catalog.apps.asu.edu/catalog/classes/classlist?campusOrOnlineSelection=A"
+               "&catalogNbr={catalog}&honors=F&promod=F&searchType=all&subject={subject}&term={term}")
+ ADD_URL = "https://go.oasis.asu.edu/addclass/?STRM={term}&ASU_CLASS_NBR={nbr}"
+-USER_AGENT = ("seat-snipe/1.2 (Cubbie skill; one student's watch list, checks every 15 min; "
++USER_AGENT = ("class-concierge/1.2 (Cubbie skill; one student's watch list, checks every 15 min; "
+               "+https://github.com/Aadharsh21/seat-snipe)")
+ SKILL_DIR = Path(__file__).resolve().parent.parent
+ SAMPLE_FILE = SKILL_DIR / "assets" / "sample_cse340_spring2027.json"
+@@ -628,8 +628,8 @@ def wants_follow_up(state: dict, now_minutes: int | None) -> bool:
+ 
+ def arm_follow_up(state: dict, labels: list[str]) -> None:
+     state["follow_up"] = {"labels": labels, "since": datetime.now().isoformat(timespec="seconds")}
+-    print(f"  follow-up: create a one-time check-in in {FOLLOW_UP_MINUTES} minutes with this task: \"Seat Snipe "
+-          "follow-up: from the seat-snipe Skill's folder, run python3 scripts/seats.py followup and do what it "
++    print(f"  follow-up: create a one-time check-in in {FOLLOW_UP_MINUTES} minutes with this task: \"Class Concierge "
++          "follow-up: from the class-concierge Skill's folder, run python3 scripts/seats.py followup and do what it "
+           "says.\" If the student replies before then, run python3 scripts/seats.py ack.")
+ 
+ 
+@@ -1018,7 +1018,7 @@ def cmd_check(args, today: date) -> int:
+     state = load_state(args.is_sample)
+     watches = state["watches"]
+     if not watches:
+-        print("NO-WATCHES Nothing to watch, so the Seat Snipe check-in can be deleted.")
++        print("NO-WATCHES Nothing to watch, so the Class Concierge check-in can be deleted.")
+         return 0
+     if args.page_blocked:
+         return cmd_page_blocked(args, state)
+@@ -1167,7 +1167,7 @@ def cmd_check(args, today: date) -> int:
+     state["watches"] = keep
+     save_state(state, args.is_sample)
+     if not keep:
+-        print("NO-WATCHES Nothing left to watch, so the Seat Snipe check-in can be deleted.")
++        print("NO-WATCHES Nothing left to watch, so the Class Concierge check-in can be deleted.")
+     print(f"SUMMARY checked {len(watches)} watched class{'es' if len(watches) != 1 else ''}: "
+           f"{new_open} new opening{'s' if new_open != 1 else ''}.")
+     return 0
