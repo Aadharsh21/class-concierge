@@ -4,7 +4,7 @@
 
 ### Stop refreshing Class Search. Text Cubbie instead.
 
-**Plan your ASU semester, pick the best-rated sections, and get a text or a call the second a seat opens.**
+**Plan your ASU semester, pick the best-rated sections, and get a text or a call when a scheduled check detects an opening.**
 
 <br/>
 
@@ -28,7 +28,7 @@
 Registration opens and the section you need says **0 open seats**. So you refresh Class Search in lecture, in line
 for coffee, at 1 AM. When a seat finally frees up, it goes to whoever happened to refresh at that moment.
 
-Class Concierge makes sure that's you.
+Class Concierge helps you catch openings without constantly refreshing.
 
 ## 🧾 Real output, not a mockup
 
@@ -75,7 +75,7 @@ for each course so you pick the exact section on your phone. Got favorites alrea
 
 *"Track 21671."*
 
-Checks ASU **every 15 minutes** and alerts you the second a seat opens, with the add link ready to tap.
+Checks ASU **every 15 minutes** and alerts you when a scheduled check detects an opening, with the add link ready to tap.
 <sub>ASU sometimes blocks these checks; see Honest limits.</sub>
 
 </td>
@@ -121,7 +121,7 @@ flowchart LR
 Text this link to **Cubbie** and reply "yes" when it asks:
 
 ```text
-https://github.com/Aadharsh21/seat-snipe
+https://github.com/Aadharsh21/class-concierge
 ```
 
 Then try any of these:
@@ -198,6 +198,6 @@ answers. Class Concierge is a student project, not affiliated with Arizona State
 
 </div>
 
-The project is now Class Concierge. The existing repository link remains the install link.
+The project is now Class Concierge. Use the Class Concierge repository link above to install or update.
 Saved watches and preferences continue using `~/.config/seat-snipe/` for compatibility.
 When updating, Cubbie should reuse and rename existing check-ins rather than create duplicates.
