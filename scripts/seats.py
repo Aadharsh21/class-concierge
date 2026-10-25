@@ -835,12 +835,27 @@ def cmd_watch_remove(args, today: date) -> int:
     return 0
 
 
+def cmd_page_blocked(args, state: dict) -> int:
+    """The browser hit a human check or sign-in screen during a scheduled check: ask the student once, not every time."""
+    state["verify_streak"] = state.get("verify_streak", 0) + 1
+    save_state(state, args.is_sample)
+    streak = state["verify_streak"]
+    if streak == 1 or streak % WARN_AGAIN_AFTER == 0:
+        print("ASK-VERIFY ASU's class search wants a quick human check before seats can be read. Text the student "
+              "once: reply when you can take over the browser for a few seconds, and checks will pick up again.")
+    else:
+        print(f"NEEDS-VERIFY still waiting for the student's human check ({streak} checks so far; stay quiet)")
+    return 0
+
+
 def cmd_check(args, today: date) -> int:
     state = load_state(args.is_sample)
     watches = state["watches"]
     if not watches:
         print("NO-WATCHES Nothing to watch, so the Seat Snipe check-in can be deleted.")
         return 0
+    if args.page_blocked:
+        return cmd_page_blocked(args, state)
 
     found: dict[tuple[str, str], dict | None] = {}
     seen = parse_seen_list(args.seen)
@@ -884,6 +899,7 @@ def cmd_check(args, today: date) -> int:
         return exc.code
 
     state["fail_streak"] = 0
+    state["verify_streak"] = 0
     now = datetime.now().isoformat(timespec="minutes")
     alert = alert_line(state, student_minutes(state, args.now))
     new_open = 0
@@ -1030,6 +1046,8 @@ def build_parser() -> argparse.ArgumentParser:
     check = sub.add_parser("check", parents=[common], help="check every watched class once (the scheduled check)")
     check.add_argument("--seen", action="append",
                        help="seats read on the class search page, as <class number>=<open>/<total>; repeat for more")
+    check.add_argument("--page-blocked", action="store_true",
+                       help="the browser got a human check or sign-in screen instead of the class list")
     check.set_defaults(func=cmd_check, on_blocked=blocked_check)
 
     drill = sub.add_parser("drill", parents=[common], help="print a test alert from the saved sample data")

@@ -129,8 +129,11 @@ Run `python3 scripts/seats.py check`. If it prints `BLOCKED` (exit code 6), read
 - `WARN`: ASU's class search hasn't answered for a while. Text the student once that you'll keep trying.
 - `NO-WATCHES`: nothing is left to watch. Delete this Seat Snipe check-in and don't text the student.
 
+- `ASK-VERIFY`: text the student once that you need them to take over the browser for a quick human check
+  (section 7).
+
 Anything else (`FULL`, `RESERVED`, `STILL-OPEN`, `PARTLY-OPEN`, `PARTLY-READ`, `UNREAD`, `MISSING`, `FAILED`,
-`SUMMARY`) needs no message: stay silent. `PARTLY-OPEN` means only part of a set has a seat, which the student
+`NEEDS-VERIFY`, `SUMMARY`) needs no message: stay silent. `PARTLY-OPEN` means only part of a set has a seat, which the student
 can't use yet.
 A watched class stays on the list after an alert until the student says they got in, so if it fills and opens
 again they hear about it again.
@@ -227,6 +230,20 @@ seats. Each section on the page has an "Open seats" line, like "Open seats: 3 of
 
 Never guess seat numbers. If a page won't load or the class isn't on it, leave that class out; the script
 waits for the next check.
+
+**A human check or sign-in screen.** ASU's site can answer Cubbie's browser with a verification screen (like
+Cloudflare's "Verify you are human") or an ASU sign-in page instead of the class list. Never try to get past it
+yourself.
+
+- If the student is in the conversation, ask them to take over the browser for that one step, then read the class
+  list once it shows. Cubbie keeps the browser session, so later visits often load straight away.
+- If the next screen asks for their ASU password, say that's their call: Seat Snipe only needs the public class
+  list, and signing in would leave Cubbie's browser logged in to their ASU account. They can stop there and send a
+  screenshot of ASU's class search from their phone instead: read the class numbers and "Open seats" lines from it
+  and use them like browser numbers (`--seen`).
+- During a scheduled check, run `python3 scripts/seats.py check --page-blocked` instead of `--seen`. `ASK-VERIFY`
+  means text the student once that you need them to take over the browser for a quick check. `NEEDS-VERIFY` means
+  you already asked: stay silent. The next successful check clears it.
 
 ## Replies
 
