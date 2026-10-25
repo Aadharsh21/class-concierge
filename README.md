@@ -142,7 +142,8 @@ Then try any of these:
 ```text
 seat-snipe/
 ├── SKILL.md             what Cubbie reads: when to use it, every step, reply style, failure handling
-├── scripts/seats.py     search · compare · watch · check · alerts · drill · ack · followup
+├── scripts/seats.py     search · compare · watch · check · alerts · drill · ack · followup · diagnose
+├── tests/               unit tests for how ASU's answers and failures are handled
 ├── assets/              a saved real ASU response for --sample runs, and this README's graphic
 └── README.md
 ```
@@ -152,6 +153,9 @@ seat-snipe/
   check-ins and its browser.
 - **Polite.** One request per watched course every 15 minutes, with a plain User-Agent that names the Skill.
 - **Zero setup.** Python standard library only. No packages, no keys, no sign-in.
+- **Knows why it failed.** `diagnose` tells a verification page apart from a plain refusal or a network problem,
+  without touching your watches. Network handling is covered by unit tests:
+  `python3 -m unittest discover -s tests -v`.
 
 Try it without a network connection, using a saved real response:
 

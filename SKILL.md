@@ -234,6 +234,13 @@ browser for a verification check: ASU sends Cubbie's browser to a sign-in page e
 
 Never guess seat numbers: if a screenshot doesn't show a class, leave that class out.
 
+To see exactly why lookups fail (when the student asks, or to share with Cubbie's team), run
+`python3 scripts/seats.py diagnose --term "<term>" --course "<SUBJECT NUMBER>"`. It changes nothing and prints
+`DIAG` lines: `reason=human_check` means ASU answered with a verification page, `reason=forbidden` or
+`reason=unauthorized` means a plain refusal, and `reason=network_tunnel` means this computer's own network refused
+the connection. Share the `DIAG` lines as they are, without guessing beyond them. Don't use `--sample` to test
+access.
+
 ## Replies
 
 Keep each reply to a few short lines of plain text with no Markdown. Lead with what matters. Put every link on its

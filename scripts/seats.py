@@ -12,6 +12,7 @@ Reads ASU's public class search: no sign-in, no key, standard library only.
   python3 scripts/seats.py alerts --set both                  (text, call or both)
   python3 scripts/seats.py check                              (the scheduled check)
   python3 scripts/seats.py drill                              (a test alert)
+  python3 scripts/seats.py diagnose --term 2271 --course "CSE 412"   (why lookups fail; changes nothing)
 
 Add --sample to any command to use the saved copy in assets/ instead of the network.
 Sample runs keep their own watch list, apart from the student's.
@@ -22,6 +23,7 @@ reachable, 5 ASU answered in an unexpected way.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -156,12 +158,21 @@ def request_json(url: str):
         try:
             with urllib.request.urlopen(req, timeout=20) as resp:
                 body = resp.read()
+                challenge = is_challenge(resp.headers, body)
+            if challenge:
+                raise Stop(EXIT_BLOCKED, "reason=human_check HTTP 200 returned a verification page, not seat data.")
             break
         except urllib.error.HTTPError as exc:
+            body = exc.read(8192)
+            if is_challenge(exc.headers, body):
+                raise Stop(EXIT_BLOCKED, f"reason=human_check HTTP {exc.code} returned a verification challenge. "
+                           "A person must complete verification in the browser.") from None
             if exc.code in (401, 403):
+                reason = "unauthorized" if exc.code == 401 else "forbidden"
                 server = (exc.headers.get("Server") or "").strip() if exc.headers else ""
-                raise Stop(EXIT_BLOCKED, f"ASU's class search turned this computer away (HTTP {exc.code}"
-                                         f"{', server ' + server if server else ''}).") from None
+                raise Stop(EXIT_BLOCKED, f"reason={reason} HTTP {exc.code}{' server=' + server if server else ''}; "
+                           "the public Bearer null header was sent. This response alone does not establish a bot "
+                           "challenge.") from None
             if exc.code != 429 and exc.code < 500:
                 raise Stop(EXIT_UNEXPECTED, f"ASU's class search answered HTTP {exc.code}; "
                                             "the seat checker needs an update.") from None
@@ -169,7 +180,8 @@ def request_json(url: str):
         except (urllib.error.URLError, TimeoutError, OSError) as exc:
             problem = str(getattr(exc, "reason", exc))
             if "tunnel connection failed" in problem.lower():  # this computer's own network refused, not ASU
-                raise Stop(EXIT_BLOCKED, f"This computer's network won't connect to ASU's class search ({problem}).") \
+                raise Stop(EXIT_BLOCKED, "reason=network_tunnel This environment's network tunnel refused the connection; "
+                           "this is not evidence of an ASU verification challenge.") \
                     from None
         if attempt == 0:
             time.sleep(3)
@@ -180,6 +192,35 @@ def request_json(url: str):
     except ValueError:
         raise Stop(EXIT_UNEXPECTED, "ASU's class search sent something other than a class list; "
                                     "the seat checker needs an update.") from None
+
+
+def is_challenge(headers, body: bytes) -> bool:
+    if headers and headers.get("cf-mitigated", "").lower() == "challenge":
+        return True
+    text = body[:8192].decode("utf-8", errors="replace").lower()
+    html = "<html" in text or "<!doctype html" in text
+    return html and any(marker in text for marker in (
+        "cf-chl-", "/cdn-cgi/challenge-platform/", "verify you are human", "<title>just a moment"))
+
+
+def cmd_diagnose(args, today: date) -> int:
+    """One read-only lookup from the actual runtime; no watch or preference changes."""
+    fingerprint = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()[:12]
+    print(f"DIAG script_sha256={fingerprint} python={sys.version.split()[0]} "
+          f"source={'sample' if args.is_sample else 'live'}")
+    print("DIAG authorization=public_bearer_null timeout_seconds=20 attempts=2")
+    term = parse_term(args.term, today)
+    subject, catalog = parse_course(args.course)
+    try:
+        result = fetch(term, subject=subject, catalog=catalog, sample=args.sample_path)
+    except Stop as exc:
+        print(f"DIAG FAIL exit={exc.code} {exc}")
+        print("DIAG No seats verified. Compare this fingerprint with the installed repo version; "
+              "share these diagnostic lines with the Cubbie team if access still fails.")
+        return exc.code
+    print(f"DIAG OK term={term} course={subject}{catalog} sections={len(result['sections'])}")
+    print("DIAG This lookup succeeded; it does not verify scheduled checks or phone calls.")
+    return 0
 
 
 def fetch(term: str, subject: str = "", catalog: str = "", keywords: str = "", sample: Path | None = None) -> dict:
@@ -1074,6 +1115,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     parser = argparse.ArgumentParser(description="Watch full ASU classes and report when a seat opens.")
     sub = parser.add_subparsers(dest="command", required=True)
+
+    diagnose = sub.add_parser("diagnose", parents=[common], help="test access without changing watches")
+    diagnose.add_argument("--term", default="next")
+    diagnose.add_argument("--course", default="CSE 412")
+    diagnose.set_defaults(func=cmd_diagnose)
 
     search = sub.add_parser("search", parents=[common], help="list the sections of a course and their seats")
     search.add_argument("--term", default="next", help='"spring 2027", "fall", "next" or a code like 2271')
