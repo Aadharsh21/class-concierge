@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 630" width="960" height="630" role="img" aria-label="Seat Snipe in three steps: plan from your major map, watch a full class, get a text and then a call when a seat opens">
+<defs><linearGradient id="cubbie" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5ac8fa"/><stop offset="1" stop-color="#0a5bd6"/></linearGradient></defs>
+<g font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+<rect x="124.0" y="8" width="92" height="26" rx="13" fill="#0a84ff"/>
+<text x="170.0" y="26" fill="#ffffff" font-size="12" font-weight="700" text-anchor="middle" letter-spacing="1.2">1  PLAN</text>
+<rect x="40" y="52" width="260" height="540" rx="40" fill="#1c1c1e" stroke="#3a3a3c" stroke-width="2"/>
+<rect x="48" y="60" width="244" height="524" rx="33" fill="#000000"/>
+<rect x="136" y="70" width="68" height="20" rx="10" fill="#1c1c1e"/>
+<text x="70" y="85" fill="#ffffff" font-size="12" font-weight="600">9:41</text>
+<circle cx="170.0" cy="122" r="17" fill="url(#cubbie)"/>
+<path d="M177.0 115 a9 9 0 1 0 0 14" stroke="#ffffff" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+<text x="170.0" y="156" fill="#f2f2f7" font-size="11" text-anchor="middle" font-weight="600">Cubbie</text>
+<line x1="48" y1="168" x2="292" y2="168" stroke="#1c1c1e"/>
+<rect x="152.2" y="180" width="129.8" height="48" rx="15" fill="#0a84ff"/>
+<text x="163.2" y="200" fill="#ffffff" font-size="12">what should I take</text>
+<text x="163.2" y="216" fill="#ffffff" font-size="12">next semester?</text>
+<rect x="58.0" y="236" width="197.0" height="48" rx="15" fill="#26262a"/>
+<text x="69.0" y="256" fill="#f2f2f7" font-size="12">Spring 2027 is Term 6 on your</text>
+<text x="69.0" y="272" fill="#f2f2f7" font-size="12">Computer Systems Eng. map:</text>
+<rect x="58.0" y="292" width="191.2" height="48" rx="15" fill="#26262a"/>
+<text x="69.0" y="312" fill="#f2f2f7" font-size="12">CSE 325 · CSE 330 · CSE 360</text>
+<text x="69.0" y="328" fill="#f2f2f7" font-size="12">EEE 334 · MAT 343</text>
+<rect x="58.0" y="348" width="138.5" height="48" rx="15" fill="#26262a"/>
+<text x="69.0" y="368" fill="#f2f2f7" font-size="12">Want the best-rated</text>
+<text x="69.0" y="384" fill="#f2f2f7" font-size="12">sections for these?</text>
+<rect x="218.3" y="404" width="63.7" height="32" rx="15" fill="#0a84ff"/>
+<text x="229.3" y="424" fill="#ffffff" font-size="12">yes pls</text>
+<rect x="58.0" y="444" width="195.0" height="32" rx="15" fill="#26262a"/>
+<text x="69.0" y="464" fill="#f2f2f7" font-size="12">On it. Shortlist in a few min.</text>
+<text x="170.0" y="618" fill="#8b949e" font-size="13" text-anchor="middle" font-weight="500">Reads your official major map</text>
+</g>
+<g font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+<rect x="434.0" y="8" width="92" height="26" rx="13" fill="#0a84ff"/>
+<text x="480.0" y="26" fill="#ffffff" font-size="12" font-weight="700" text-anchor="middle" letter-spacing="1.2">2  WATCH</text>
+<rect x="350" y="52" width="260" height="540" rx="40" fill="#1c1c1e" stroke="#3a3a3c" stroke-width="2"/>
+<rect x="358" y="60" width="244" height="524" rx="33" fill="#000000"/>
+<rect x="446" y="70" width="68" height="20" rx="10" fill="#1c1c1e"/>
+<text x="380" y="85" fill="#ffffff" font-size="12" font-weight="600">6:14</text>
+<circle cx="480.0" cy="122" r="17" fill="url(#cubbie)"/>
+<path d="M487.0 115 a9 9 0 1 0 0 14" stroke="#ffffff" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+<text x="480.0" y="156" fill="#f2f2f7" font-size="11" text-anchor="middle" font-weight="600">Cubbie</text>
+<line x1="358" y1="168" x2="602" y2="168" stroke="#1c1c1e"/>
+<rect x="430.2" y="180" width="161.8" height="48" rx="15" fill="#0a84ff"/>
+<text x="441.2" y="200" fill="#ffffff" font-size="12">CSE 340 hybrid is full,</text>
+<text x="441.2" y="216" fill="#ffffff" font-size="12">watch it for spring</text>
+<rect x="368.0" y="236" width="154.0" height="64" rx="15" fill="#26262a"/>
+<text x="379.0" y="256" fill="#f2f2f7" font-size="12">#21671  CSE 340-1003</text>
+<text x="379.0" y="272" fill="#f2f2f7" font-size="12">Claveau, Tempe hybrid</text>
+<text x="379.0" y="288" fill="#f2f2f7" font-size="12">FULL  110/110</text>
+<rect x="368.0" y="308" width="194.2" height="64" rx="15" fill="#26262a"/>
+<text x="379.0" y="328" fill="#f2f2f7" font-size="12">I'll check every 15 min.</text>
+<text x="379.0" y="344" fill="#f2f2f7" font-size="12">Text, call, both, or text</text>
+<text x="379.0" y="360" fill="#f2f2f7" font-size="12">first and call if you miss it?</text>
+<rect x="453.6" y="380" width="138.4" height="48" rx="15" fill="#0a84ff"/>
+<text x="464.6" y="400" fill="#ffffff" font-size="12">text first, no calls</text>
+<text x="464.6" y="416" fill="#ffffff" font-size="12">after 11pm</text>
+<rect x="368.0" y="436" width="180.5" height="48" rx="15" fill="#26262a"/>
+<text x="379.0" y="456" fill="#f2f2f7" font-size="12">Watching #21671. I'll text</text>
+<text x="379.0" y="472" fill="#f2f2f7" font-size="12">the second a seat opens.</text>
+<text x="480.0" y="618" fill="#8b949e" font-size="13" text-anchor="middle" font-weight="500">Checks ASU every 15 minutes</text>
+</g>
+<g font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+<rect x="744.0" y="8" width="92" height="26" rx="13" fill="#0a84ff"/>
+<text x="790.0" y="26" fill="#ffffff" font-size="12" font-weight="700" text-anchor="middle" letter-spacing="1.2">3  SNIPE</text>
+<rect x="660" y="52" width="260" height="540" rx="40" fill="#1c1c1e" stroke="#3a3a3c" stroke-width="2"/>
+<rect x="668" y="60" width="244" height="524" rx="33" fill="#000000"/>
+<rect x="756" y="70" width="68" height="20" rx="10" fill="#1c1c1e"/>
+<text x="690" y="85" fill="#ffffff" font-size="12" font-weight="600">8:17</text>
+<circle cx="790.0" cy="122" r="17" fill="url(#cubbie)"/>
+<path d="M797.0 115 a9 9 0 1 0 0 14" stroke="#ffffff" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+<text x="790.0" y="156" fill="#f2f2f7" font-size="11" text-anchor="middle" font-weight="600">Cubbie</text>
+<line x1="668" y1="168" x2="912" y2="168" stroke="#1c1c1e"/>
+<text x="790.0" y="190" fill="#8e8e93" font-size="10" text-anchor="middle">8:12 AM</text>
+<rect x="678.0" y="202" width="165.0" height="64" rx="15" fill="#26262a"/>
+<text x="689.0" y="222" fill="#f2f2f7" font-size="12">Seat open in CSE 340</text>
+<text x="689.0" y="238" fill="#f2f2f7" font-size="12">(#21671, Claveau)!</text>
+<text x="689.0" y="254" fill="#f2f2f7" font-size="12">2 seats left. Add it now:</text>
+<rect x="678.0" y="274" width="185.5" height="32" rx="15" fill="#26262a"/>
+<text x="689.0" y="294" fill="#64b5ff" font-size="12" text-decoration="underline">go.oasis.asu.edu/addclass/...</text>
+<text x="790.0" y="324" fill="#8e8e93" font-size="10" text-anchor="middle">8:17 AM · no reply yet</text>
+<rect x="678" y="336" width="224" height="58" rx="16" fill="#1c1c1e" stroke="#2f2f33"/>
+<circle cx="704" cy="365" r="14" fill="url(#cubbie)"/>
+<text x="726" y="361" fill="#f2f2f7" font-size="12.5" font-weight="600">Cubbie</text>
+<text x="726" y="377" fill="#8e8e93" font-size="10.5">incoming call</text>
+<circle cx="844" cy="365" r="14" fill="#ff453a"/>
+<rect x="837" y="363" width="14" height="4" rx="2" fill="#ffffff"/>
+<circle cx="880" cy="365" r="14" fill="#30d158"/>
+<path d="M874 360 q2 -2 4 0 l2 3 q1 2 -1 3 q1 3 4 4 q1 -2 3 -1 l3 2 q2 2 0 4 q-4 3 -10 -2 q-6 -5 -5 -13z" fill="#ffffff"/>
+<rect x="798.3" y="406" width="103.7" height="32" rx="15" fill="#0a84ff"/>
+<text x="809.3" y="426" fill="#ffffff" font-size="12">got it!! I'm in</text>
+<text x="790.0" y="618" fill="#8b949e" font-size="13" text-anchor="middle" font-weight="500">Texts, then calls if you miss it</text>
+</g>
+</svg>

@@ -66,10 +66,15 @@ ALERT_CHOICES = {
     "text": "a text with the add link",
     "call": "a phone call only",
     "both": "a phone call, then the add link by text",
+    "escalate": "a text with the add link, then a call if the student hasn't replied in 5 minutes",
 }
-ALERT_WORDS = {"text": "text", "texts": "text", "sms": "text", "message": "text", "messages": "text",
-               "call": "call", "calls": "call", "phone": "call", "phone call": "call", "phone calls": "call",
-               "both": "both", "all": "both", "call and text": "both", "text and call": "both"}
+ALERT_WORDS = {"text": "text", "texts": "text", "sms": "text", "message": "text", "messages": "text", "1": "text",
+               "call": "call", "calls": "call", "phone": "call", "phone call": "call", "phone calls": "call", "2": "call",
+               "both": "both", "all": "both", "call and text": "both", "text and call": "both", "3": "both",
+               "escalate": "escalate", "4": "escalate", "text first": "escalate", "text then call": "escalate",
+               "text first then call": "escalate", "text, then call": "escalate", "call if no reply": "escalate"}
+FOLLOW_UP_MINUTES = 5
+FOLLOW_UP_EXPIRES = 60  # a follow-up call that never ran is dropped after this many minutes
 
 
 class Stop(Exception):
@@ -549,7 +554,7 @@ def alert_line(state: dict, now_minutes: int | None) -> str:
     picked = choice if choice in ALERT_CHOICES else "both"
     note = "" if choice in ALERT_CHOICES else "; the student never picked, so both is the default"
     quiet = state.get("quiet")
-    if picked in ("call", "both") and quiet:
+    if picked in ("call", "both", "escalate") and quiet:
         window = f"{clock_label(quiet['start'])} to {clock_label(quiet['end'])}"
         if now_minutes is None:
             return (f"  alert by: {picked} ({ALERT_CHOICES[picked]}{note}), except no calls from {window} the "
@@ -557,8 +562,23 @@ def alert_line(state: dict, now_minutes: int | None) -> str:
         if in_window(now_minutes, quiet):
             now = f"{now_minutes // 60:02d}:{now_minutes % 60:02d}"
             return (f"  alert by: text (they picked {picked}, but it's {clock_label(now)} for them, inside their "
-                    f"no-call hours of {window}, so text only)")
+                    f"no-call hours of {window}, so text only, with no follow-up call)")
     return f"  alert by: {picked} ({ALERT_CHOICES[picked]}{note})"
+
+
+def wants_follow_up(state: dict, now_minutes: int | None) -> bool:
+    """Text-first students get a call later only if the alert didn't land in their no-call hours."""
+    if state.get("alert_by") != "escalate":
+        return False
+    quiet = state.get("quiet")
+    return not (quiet and now_minutes is not None and in_window(now_minutes, quiet))
+
+
+def arm_follow_up(state: dict, labels: list[str]) -> None:
+    state["follow_up"] = {"labels": labels, "since": datetime.now().isoformat(timespec="seconds")}
+    print(f"  follow-up: create a one-time check-in in {FOLLOW_UP_MINUTES} minutes with this task: \"Seat Snipe "
+          "follow-up: from the seat-snipe Skill's folder, run python3 scripts/seats.py followup and do what it "
+          "says.\" If the student replies before then, run python3 scripts/seats.py ack.")
 
 
 def save_state(state: dict, sample: bool) -> None:
@@ -738,6 +758,42 @@ def cmd_watch_add(args, today: date) -> int:
     return 0 if added else EXIT_NOT_FOUND
 
 
+def cmd_ack(args, today: date) -> int:
+    state = load_state(args.is_sample)
+    if state.get("follow_up"):
+        state["follow_up"] = None
+        save_state(state, args.is_sample)
+        print("ACKED The student replied, so the follow-up call is off.")
+    else:
+        print("NOTHING-PENDING No follow-up call was waiting.")
+    return 0
+
+
+def cmd_followup(args, today: date) -> int:
+    state = load_state(args.is_sample)
+    pending = state.get("follow_up")
+    if not pending:
+        print("NO-CALL The student already replied, or nothing is pending (stay quiet).")
+        return 0
+    state["follow_up"] = None
+    save_state(state, args.is_sample)
+    try:
+        waited = (datetime.now() - datetime.fromisoformat(pending["since"])).total_seconds() / 60
+    except (KeyError, TypeError, ValueError):
+        waited = 0
+    if waited > FOLLOW_UP_EXPIRES:
+        print("NO-CALL The alert is over an hour old, so a call now would be stale (stay quiet).")
+        return 0
+    now_minutes = student_minutes(state, args.now)
+    quiet = state.get("quiet")
+    if quiet and now_minutes is not None and in_window(now_minutes, quiet):
+        print("NO-CALL It's inside the student's no-call hours now (stay quiet).")
+        return 0
+    print(f"CALL-NOW No reply to the seat alert for {' and '.join(pending['labels'])}. Call the student now: say which "
+          "class has a seat and that the add link is in their texts.")
+    return 0
+
+
 def cmd_alerts(args, today: date) -> int:
     state = load_state(args.is_sample)
     changed = False
@@ -755,13 +811,13 @@ def cmd_alerts(args, today: date) -> int:
     choice = state["alert_by"]
     if choice in ALERT_CHOICES:
         print(f"ALERT-BY {choice}: {ALERT_CHOICES[choice]}. {quiet_text(state)}")
-        if choice in ("call", "both") and state.get("quiet") is None and not args.quiet:
+        if choice in ("call", "both", "escalate") and state.get("quiet") is None and not args.quiet:
             print("ASK-QUIET Calls can come at any hour. Ask whether to skip calls at night and text instead, "
                   "like 11pm-8am, then run: alerts --quiet <window> --tz <student's time zone> (or --quiet off)")
         elif state.get("quiet") and not state.get("tz"):
             print("ASK-TZ Run: alerts --tz <student's time zone, like America/Phoenix>, so no-call hours use their clock.")
     else:
-        print("ALERT-BY not set. Ask the student: text, call or both?")
+        print("ALERT-BY not set. Ask the student: text, call, both, or text first and call if they don't reply?")
     return 0
 
 
@@ -809,8 +865,12 @@ def cmd_drill(args, today: date) -> int:
           "but start the call and the text with \"Test alert\".")
     print(f"NEW-OPEN {short_label(s)} has 2 open seats of {s['cap']}")
     state = load_state(args.is_sample)
-    print(alert_line(state, student_minutes(state, args.now)))
+    now_minutes = student_minutes(state, args.now)
+    print(alert_line(state, now_minutes))
     print("\n".join(link_lines("2271", "21671")))
+    if wants_follow_up(state, now_minutes):
+        arm_follow_up(state, [short_label(s) + " (test alert)"])
+        save_state(state, args.is_sample)
     return 0
 
 
@@ -902,7 +962,9 @@ def cmd_check(args, today: date) -> int:
     state["fail_streak"] = 0
     state["verify_streak"] = 0
     now = datetime.now().isoformat(timespec="minutes")
-    alert = alert_line(state, student_minutes(state, args.now))
+    now_minutes = student_minutes(state, args.now)
+    alert = alert_line(state, now_minutes)
+    alerted: list[str] = []  # labels alerted in this check, for a text-first student's follow-up call
     new_open = 0
     keep = []
     rows = []  # (watch, section, previous status, current status) for every class still being watched
@@ -957,6 +1019,7 @@ def cmd_check(args, today: date) -> int:
                 new_open += 1
                 print(f"NEW-OPEN {names}: every one of them has a seat now, and the student needs all of them")
                 print(alert)
+                alerted.extend(m[0]["label"] for m in members)
                 for m in members:
                     print(f"  {m[0]['label']}: {seats_text(m[1])}")
                     print("\n".join("  " + line for line in link_lines(m[0]["term"], m[0]["nbr"])))
@@ -974,6 +1037,7 @@ def cmd_check(args, today: date) -> int:
             print(f"NEW-OPEN {w['label']} has {s['open']} open seat{'s' if s['open'] != 1 else ''} of {s['cap']}")
             print(alert)
             print("\n".join(link_lines(w["term"], w["nbr"])))
+            alerted.append(w["label"])
         elif current == "OPEN":
             print(f"STILL-OPEN {w['label']}, {seats_text(s)} (the student already knows)")
         elif current == "RESERVED" and previous == "FULL":
@@ -985,6 +1049,8 @@ def cmd_check(args, today: date) -> int:
     for w, s, previous, current in rows:
         w["last_status"] = current
         w["last_checked"] = now
+    if alerted and wants_follow_up(state, now_minutes):
+        arm_follow_up(state, alerted)
     state["watches"] = keep
     save_state(state, args.is_sample)
     if not keep:
@@ -1054,8 +1120,13 @@ def build_parser() -> argparse.ArgumentParser:
     drill = sub.add_parser("drill", parents=[common], help="print a test alert from the saved sample data")
     drill.set_defaults(func=cmd_drill)
 
+    ack = sub.add_parser("ack", parents=[common], help="the student replied to an alert: cancel the follow-up call")
+    ack.set_defaults(func=cmd_ack)
+    followup = sub.add_parser("followup", parents=[common], help="the 5-minute follow-up: call only if no reply")
+    followup.set_defaults(func=cmd_followup)
+
     alerts = sub.add_parser("alerts", parents=[common], help="show or set how the student hears about an opening")
-    alerts.add_argument("--set", help="text, call or both")
+    alerts.add_argument("--set", help="text, call, both or escalate (text first, call if no reply in 5 minutes)")
     alerts.add_argument("--quiet", help='no calls in this window, texts instead: like "11pm-8am", or off')
     alerts.add_argument("--tz", help="the student's time zone, like America/Phoenix")
     alerts.set_defaults(func=cmd_alerts)

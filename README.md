@@ -1,89 +1,187 @@
-# Seat Snipe
+<div align="center">
 
-Plan your ASU semester and snipe the seats. Text Cubbie your major, get the classes you need with the best-rated
-professors, and hear the second a seat opens.
+# 🎯 Seat Snipe
 
-Seat Snipe is a [Cubbie](https://cubbie.ai) Skill. It watches Arizona State University's public class search every
-15 minutes and, the moment a seat opens in a class you're watching, alerts you the way you picked: a text with a
-direct link to add it, a phone call, or both.
+### Stop refreshing Class Search. Text Cubbie instead.
 
-## Install
+**Plan your ASU semester, pick the best-rated sections, and get a text or a call the second a seat opens.**
 
-Text this link to Cubbie and reply "yes" when it asks:
+<br/>
+
+![Cubbie Skill](https://img.shields.io/badge/Cubbie-Skill-0A84FF?style=for-the-badge)
+![ASU](https://img.shields.io/badge/ASU-every%20campus%20%2B%20online-FFC627?style=for-the-badge&labelColor=8C1D40)
+![Python](https://img.shields.io/badge/Python-standard%20library%20only-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![No login](https://img.shields.io/badge/no%20login-no%20keys-30D158?style=for-the-badge)
+
+<br/>
+
+<img src="assets/readme/demo.svg" width="100%" alt="Three phone screens. Plan: Cubbie reads your major map and lists next semester's courses. Watch: you ask it to watch a full CSE 340 section and pick how to be alerted. Snipe: a seat opens, Cubbie texts the add link, then calls when you don't reply."/>
+
+<sub>Illustration of the flow. The output below is real.</sub>
+
+</div>
+
+---
+
+## 😩 The problem
+
+Registration opens and the section you need says **0 open seats**. So you refresh Class Search in lecture, in line
+for coffee, at 1 AM. When a seat finally frees up, it goes to whoever happened to refresh at that moment.
+
+Seat Snipe makes sure that's you.
+
+## 🧾 Real output, not a mockup
+
+Texted to Cubbie on Oct 24, 2026: *"check CSE 412 for spring 2027"*
+
+```text
+CSE 412 Database Management, Spring 2027 (term 2271): 4 sections, 0 full
+#31637 CSE 412-1002 | MW 10:30 AM-11:45 AM, Tempe CDN60 | Hasan Davulcu | 9 open of 160, plus 126 reserved
+#18443 CSE 412-1001 | TTh 12:00 PM-1:15 PM, Tempe CDN60 | Ms Jia Zou | 9 open of 160, plus 117 reserved
+#32714 CSE 412-1003 | MW 12:00 PM-1:15 PM, Tempe CDN60 | Hasan Davulcu | 15 open of 160, plus 105 reserved
+#25546 CSE 412-2001 | online, no set meeting time | Hasan Davulcu | 37 open of 125, plus 6 reserved
+```
+
+See **"9 open, plus 126 reserved"**? Capacity minus enrolled would say 135 open seats. But 126 of them are held for
+specific groups of students, so only 9 are actually up for grabs. Seat Snipe tells you which number is real.
+
+## ✨ What it does
+
+<table>
+<tr>
+<td width="33%" valign="top">
+
+### 🗺️ Plan
+
+*"What should I take next semester?"*
+
+Cubbie reads your **official ASU major map** and texts back the critical courses, the rest of the term, and
+your elective slots.
+
+</td>
+<td width="33%" valign="top">
+
+### ⭐ Pick
+
+*"Who's the best professor for CSE 330?"*
+
+The **easiest electives** and **best-rated sections**, from Rate My Professors reviews plus live seats. Got
+favorites already? Your picks win.
+
+</td>
+<td width="33%" valign="top">
+
+### 🎯 Snipe
+
+*"Watch CSE 340 for spring."*
+
+Checks ASU **every 15 minutes** and alerts you the second a seat opens, with the add link ready to tap.
+
+</td>
+</tr>
+</table>
+
+## 🧰 Features
+
+| | |
+| --- | --- |
+| 💬 **Plain English** | "check CSE 412 for spring" just works. No class numbers needed: pick a section by its time or professor. |
+| 🔒 **Honest seat counts** | Separates seats anyone can take from seats reserved for specific majors or cohorts. |
+| 🧪 **Lecture + lab sets** | Need both? Watch them together, and the alert only comes when both have a seat. |
+| 📞 **Alerts your way** | A text with the add link, a call, both, or a text first with a call if you don't reply in 5 minutes. |
+| 🌙 **No-call hours** | Pick a window like 11pm to 8am. Openings during it arrive as a text, not a 3 AM ring. |
+| 🔁 **One alert per opening** | Quiet while a seat stays open, and re-armed automatically if it fills and opens again. |
+| ⌛ **Stops on its own** | After the last day to add, when a section is cancelled, or when you say you got in. |
+| 🚨 **Never silently blind** | If ASU stops answering for an hour, you hear about it once. |
+| 🧯 **Built-in fallback** | If ASU turns Cubbie's servers away, it reads the public class search page in its own browser instead. |
+| 🎬 **Test alert** | Text "send me a test alert" to see and hear exactly what an opening looks like. |
+| 🧠 **Remembers you** | Your major, alert style and no-call hours are asked once, then saved. |
+
+## 🔄 How it works
+
+```mermaid
+flowchart LR
+    A["💬 watch CSE 340"] --> B["🔎 Live sections from ASU<br/>you pick one"]
+    B --> C["⏱️ Cubbie check-in<br/>every 15 min"]
+    C --> D{"Seat open<br/>to anyone?"}
+    D -- "not yet" --> C
+    D -- "yes" --> E{"Inside your<br/>no-call hours?"}
+    E -- "yes" --> F["📱 Text + add link"]
+    E -- "no" --> G["📞 Call, text or both<br/>the way you picked"]
+    F --> H["✅ You add it in My ASU"]
+    G --> H
+```
+
+## 📲 Install (10 seconds)
+
+Text this link to **Cubbie** and reply "yes" when it asks:
 
 ```text
 https://github.com/Aadharsh21/seat-snipe
 ```
 
-## What it looks like
+Then try any of these:
+
+- *"what should I take next semester?"*
+- *"check CSE 412 for spring 2027"*
+- *"watch the hybrid CSE 340 section and call me when a seat opens"*
+- *"no calls after 11pm"*
+- *"send me a test alert"*
+
+## 🛡️ What it will never do
+
+> ❌ Enroll, drop, swap or pay for you &nbsp;·&nbsp; ❌ Ask for your ASU password &nbsp;·&nbsp; ❌ Text anyone but you
+> &nbsp;·&nbsp; ❌ Guess a seat count or make up a rating
+>
+> **You always make the final tap in My ASU.** Ratings are labeled as student reviews, and your watch list and
+> preferences stay on your own Cubbie drive.
+
+## 🔧 Under the hood
 
 ```text
-You:    CSE 340 is full for spring 😭 tell me when a seat opens
-Cubbie: CSE 340, Spring 2027: the hybrid section #21671 (Claveau) is full, 110/110.
-        I'll check it every 15 min. When a seat opens, how should I tell you?
-        1. Text with the add link
-        2. Phone call
-        3. Both: a call so you don't miss it, then the link by text
-You:    3
-Cubbie: Watching #21671. I'll call you, then text the link, the moment a seat opens.
-
-        (later)
-
-Cubbie: 📞 incoming call
-Cubbie: Seat open in CSE 340 (#21671, Claveau)! 2 seats left.
-        Add it now:
-        https://go.oasis.asu.edu/addclass/?STRM=2271&ASU_CLASS_NBR=21671
+seat-snipe/
+├── SKILL.md             what Cubbie reads: when to use it, every step, reply style, failure handling
+├── scripts/seats.py     search · compare · watch · check · alerts · drill · ack · followup
+├── assets/              a saved real ASU response for --sample runs, and this README's graphic
+└── README.md
 ```
 
-## What it does
+- **Split of work.** The script does everything that has to be exact: ASU lookups, seat math, alert-once state
+  under `~/.config/seat-snipe/`, and no-call hours in your own time zone. Cubbie does the talking: texts, calls,
+  check-ins and its browser.
+- **Polite.** One request per watched course every 15 minutes, with a plain User-Agent that names the Skill.
+- **Zero setup.** Python standard library only. No packages, no keys, no sign-in.
 
-- Plans your next semester: tell it your major and semester, and it reads your official ASU major map to list
-  the critical courses and elective slots for that term.
-- Finds the easiest electives and the best-rated professors, using student reviews from Rate My Professors and
-  live seat counts, then offers to watch any full sections. Already have favorite professors? Tell it, and it uses
-  yours.
-- Watches as many classes as you want, on every ASU campus and ASU Online, labs and recitations included.
-- Need a lecture and its lab? Watch them as a set, and the alert only comes when both have a seat.
-- Checks every 15 minutes and stays quiet until something changes.
-- Asks once how you want alerts (a text, a phone call, or both) and remembers it. Change it any time with
-  "just text me" or "call me instead".
-- Lets you pick no-call hours, like 11pm to 8am: an opening during those hours arrives as a text instead of a call.
-- Puts the add link in the text, ready to tap.
-- Send "send me a test alert" to see (and hear) exactly what an opening looks like.
-- Knows about reserved seats: if the only open seats are held for a specific major or cohort, it tells you
-  instead of sending you on a wild goose chase.
-- Stops on its own after the last day to add the class, or when you say you got in.
-- Never enrolls, drops or swaps anything for you. You add the class yourself in My ASU.
-- Needs no sign-in and no keys. Your watch list stays on your own Cubbie drive.
-
-## How it works
-
-- `SKILL.md` tells Cubbie how to find a class, confirm with you, set a 15-minute check-in, and when to call or text.
-- For planning, Cubbie reads your major map PDF from degrees.asu.edu, runs `scripts/seats.py compare` to see which
-  candidate courses are offered next term and who teaches them, and looks those professors up on Rate My
-  Professors with its own web search.
-- `scripts/seats.py` reads ASU's public class search (Python standard library only), works out real open seats
-  (total minus taken, minus seats reserved for other groups), and remembers what it last saw under
-  `~/.config/seat-snipe/`, so you get one alert per opening instead of one every 15 minutes.
-
-- If ASU's class search refuses requests from Cubbie's servers, Cubbie opens the same public class search page in
-  its own browser, reads the "Open seats" numbers, and passes them to the script, so alerts work the same way.
-
-Try the script on its own with the saved sample data, no network needed:
+Try it without a network connection, using a saved real response:
 
 ```bash
 python3 scripts/seats.py search --term "spring 2027" --course "CSE 340" --sample
 python3 scripts/seats.py watch add --term 2271 --course "CSE 340" --class 21671 --sample
 python3 scripts/seats.py check --sample
+python3 scripts/seats.py drill
 ```
 
-## Team
+## ⚠️ Honest limits
 
-Built at DevHacks Fall 2026 for the Cubbie Hackathon by [@Aadharsh21](https://github.com/Aadharsh21) and
-[@swayamvindo8](https://github.com/swayamvindo8).
+- ASU only, though it covers every campus and ASU Online.
+- Checks every 15 minutes, so a seat that opens and fills in between can be missed.
+- It can't see your holds, prerequisites, or whether you qualify for reserved seats.
+- "Easiest" and "best-rated" come from Rate My Professors reviews, which can be out of date.
+- Your degree audit in My ASU is the final word on requirements; the major map is the recommended order.
 
-## Credits
+## 👥 Team
 
-Seat data comes from ASU's public class search. Thanks to
-[rajkumaar23/asu-course-notifier](https://github.com/rajkumaar23/asu-course-notifier) for documenting how the
-class search API answers. Seat Snipe is a student project and isn't affiliated with Arizona State University.
+Built at **DevHacks Fall 2026** for the [Cubbie Hackathon](https://hackathon.cubbie.ai) by
+[@Aadharsh21](https://github.com/Aadharsh21) and [@swayamvindo8](https://github.com/swayamvindo8).
+
+**Credits:** seat data comes from ASU's public class search. Thanks to
+[rajkumaar23/asu-course-notifier](https://github.com/rajkumaar23/asu-course-notifier) for documenting how it
+answers. Seat Snipe is a student project, not affiliated with Arizona State University or Rate My Professors.
+
+---
+
+<div align="center">
+
+**Like it? [Vote for Seat Snipe on hackathon.cubbie.ai →](https://hackathon.cubbie.ai/#gallery)**
+
+</div>

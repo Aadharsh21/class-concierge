@@ -21,7 +21,7 @@ link and the student adds the class themselves. Course choices are the student's
 - "watch class 21671 for spring" or "my BIO 181 lab is full too"
 - "any seats left in MAT 343 with Smith?"
 - "what classes are you watching for me?" or "I got in, stop watching CSE 365"
-- "just text me from now on", "call me instead" or "no calls after 11pm"
+- "just text me from now on", "call me if I don't answer" or "no calls after 11pm"
 - "send me a test alert"
 
 Not for study schedules, homework, or anything that changes the student's enrollment.
@@ -68,15 +68,17 @@ If the student only wanted to know how many seats are left, answer from the sear
      1. Text with the add link
      2. Phone call
      3. Both: a call so you don't miss it, then the link by text
+     4. Text first, and call only if you don't reply in 5 min
      ```
 
-     Their answer is also their yes to start. If they reply just "yes" or "ok", use both.
-   - If they picked a call or both, ask one more question: "Should I skip calls at night and just text then? Give
+     Their answer is also their yes to start. If they reply just "yes" or "ok", use both. Save option 4 as
+     `escalate`.
+   - If they picked anything with a call (2, 3 or 4), ask one more question: "Should I skip calls at night and just text then? Give
      me a window like 11pm to 8am, or say call anytime." Suggest 11pm to 8am as the default.
    - Save the answers in one command, with the student's time zone so the window follows their clock:
 
      ```bash
-     python3 scripts/seats.py alerts --set <text|call|both> --quiet "<window, like 11pm-8am, or off>" --tz "<time zone, like America/Phoenix>"
+     python3 scripts/seats.py alerts --set <text|call|both|escalate> --quiet "<window, like 11pm-8am, or off>" --tz "<time zone, like America/Phoenix>"
      ```
 
      Leave out `--quiet` and `--tz` when they picked text.
@@ -117,6 +119,12 @@ Run `python3 scripts/seats.py check`. If it prints `BLOCKED` (exit code 6), read
     add it in My ASU now. Don't text.
   - `both`: call first and keep it to two sentences (which class opened, and that the link is in their texts),
     then text the alert.
+  - `escalate`: text the alert now, and don't call yet. Then do what the `follow-up:` line says: create the
+    one-time check-in it describes, 5 minutes out. When that check-in runs `followup`, `CALL-NOW` means call the
+    student (two sentences, like `both`), and `NO-CALL` means stay silent.
+
+  Whenever the student replies after a seat alert (anything at all, even "ok"), run
+  `python3 scripts/seats.py ack` so a pending follow-up call is cancelled.
 
   If a call can't be placed, text the alert instead and say the call didn't go through.
 
@@ -143,8 +151,8 @@ again they hear about it again.
 - "What are you watching?" or "are you still checking?": `python3 scripts/seats.py watch list` (it also shows
   when each class was last checked).
 - "I got in", "stop watching CSE 365": `python3 scripts/seats.py watch remove --class <number>`, or `--all`.
-- "Just text me", "call me instead", "do both": `python3 scripts/seats.py alerts --set <text|call|both>`, then
-  confirm the change in one line.
+- "Just text me", "call me instead", "do both", "text me first and call if I don't answer":
+  `python3 scripts/seats.py alerts --set <text|call|both|escalate>`, then confirm the change in one line.
 - "No calls after 10pm", "don't call before 9", "call me anytime":
   `python3 scripts/seats.py alerts --quiet "<window, like 10pm-8am>" --tz "<time zone>"`, or `--quiet off`.
 - Whenever a command prints `NO-WATCHES`, delete the Seat Snipe check-in.
@@ -276,7 +284,7 @@ Never say the student is enrolled, and never report a seat the script didn't pri
 
 | Exit code | Meaning | What to do |
 | --- | --- | --- |
-| 2 | The term, course, class number, alert choice, no-call window or time zone couldn't be read | Ask for it again, like "CSE 340, spring 2027", a 5-digit class number, text/call/both, or a window like 11pm-8am |
+| 2 | The term, course, class number, alert choice, no-call window or time zone couldn't be read | Ask for it again, like "CSE 340, spring 2027", a 5-digit class number, text/call/both/text-first, or a window like 11pm-8am |
 | 3 | Not on ASU's class search for that term | Say so, and ask the student to check the course, number or term |
 | 4 | ASU's class search isn't answering | If the student is waiting, say ASU's class search isn't responding and offer to try again in a few minutes. During a scheduled check, stay silent unless a `WARN` line printed |
 | 5 | ASU answered in an unexpected way | Say the seat checker needs an update. Never guess seat numbers |
