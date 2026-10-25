@@ -17,7 +17,7 @@ link and the student adds the class themselves.
 - "watch class 21671 for spring"
 - "any seats left in MAT 343 with Smith?"
 - "what classes are you watching for me?" or "I got in, stop watching CSE 365"
-- "just text me from now on" or "call me instead"
+- "just text me from now on", "call me instead" or "no calls after 11pm"
 - "send me a test alert"
 
 Not for choosing classes, degree planning, or anything that changes the student's enrollment.
@@ -58,20 +58,28 @@ If the student only wanted to know how many seats are left, answer from the sear
      1. Text with the add link
      2. Phone call
      3. Both: a call so you don't miss it, then the link by text
-     Calls can come at any hour.
      ```
 
      Their answer is also their yes to start. If they reply just "yes" or "ok", use both.
+   - If they picked a call or both, ask one more question: "Should I skip calls at night and just text then? Give
+     me a window like 11pm to 8am, or say call anytime." Suggest 11pm to 8am as the default.
+   - Save the answers in one command, with the student's time zone so the window follows their clock:
+
+     ```bash
+     python3 scripts/seats.py alerts --set <text|call|both> --quiet "<window, like 11pm-8am, or off>" --tz "<time zone, like America/Phoenix>"
+     ```
+
+     Leave out `--quiet` and `--tz` when they picked text.
    - A saved choice: confirm with it instead, for example "I'll check #21671 every 15 min and call + text you,
      same as last time. Start?" Start only after the student says yes.
-3. Run, adding `--alert <text|call|both>` only when the student just picked one:
+3. Run:
 
    ```bash
-   python3 scripts/seats.py watch add --term "<term>" --course "<SUBJECT NUMBER>" --class <number> --alert both
+   python3 scripts/seats.py watch add --term "<term>" --course "<SUBJECT NUMBER>" --class <number>
    ```
 
    Repeat `--class` to watch several sections of the same course in one go. If the output says `ASK-ALERTS`, ask
-   the question above, then run `python3 scripts/seats.py alerts --set <choice>`.
+   the alert question above and save the answer with `alerts --set`.
 4. If there is no Seat Snipe check-in yet, create one recurring check-in that runs every 15 minutes, with this task:
    "Seat Snipe: from the seat-snipe Skill's folder, run `python3 scripts/seats.py check` and follow the
    Scheduled check steps in its SKILL.md. Contact the student only when those steps say to."
@@ -82,7 +90,8 @@ If the student only wanted to know how many seats are left, answer from the sear
 
 Run `python3 scripts/seats.py check`, then act only on these lines:
 
-- `NEW-OPEN`: a seat just opened. Alert the student right away the way the `alert by` line under it says:
+- `NEW-OPEN`: a seat just opened. Alert the student right away the way the `alert by` line under it says (it
+  already accounts for their no-call hours; if it asks you to check their local time, do):
   - `text`: text the alert (see Replies) with the add link on its own line. Don't call.
   - `call`: call the student. Say which course opened, read the class number digit by digit, and tell them to
     add it in My ASU now. Don't text.
@@ -108,14 +117,17 @@ again they hear about it again.
 - "I got in", "stop watching CSE 365": `python3 scripts/seats.py watch remove --class <number>`, or `--all`.
 - "Just text me", "call me instead", "do both": `python3 scripts/seats.py alerts --set <text|call|both>`, then
   confirm the change in one line.
+- "No calls after 10pm", "don't call before 9", "call me anytime":
+  `python3 scripts/seats.py alerts --quiet "<window, like 10pm-8am>" --tz "<time zone>"`, or `--quiet off`.
 - Whenever a command prints `NO-WATCHES`, delete the Seat Snipe check-in.
 
 ### 5. Test alert
 
 When the student wants to see what an alert looks like ("send me a test alert", "test seat snipe"), run
 `python3 scripts/seats.py drill`. It prints a `NEW-OPEN` line built from saved sample data, without touching the
-network or the watch list. Handle it exactly like a real `NEW-OPEN`, following its `alert by` line, but start the
-call and the text with "Test alert" so it is never mistaken for a real seat. If the student asks for the test
+network or the watch list. Handle it exactly like a real `NEW-OPEN`, following its `alert by` line (no-call hours
+included, so the student sees exactly what would happen right now), but start the call and the text with
+"Test alert" so it is never mistaken for a real seat. If the student asks for the test
 later ("in 5 minutes"), do it as a one-time check-in.
 
 ## Replies
@@ -140,7 +152,7 @@ Never say the student is enrolled, and never report a seat the script didn't pri
 
 | Exit code | Meaning | What to do |
 | --- | --- | --- |
-| 2 | The term, course, class number or alert choice couldn't be read | Ask for it like "CSE 340, spring 2027", a 5-digit class number, or text, call or both |
+| 2 | The term, course, class number, alert choice, no-call window or time zone couldn't be read | Ask for it again, like "CSE 340, spring 2027", a 5-digit class number, text/call/both, or a window like 11pm-8am |
 | 3 | Not on ASU's class search for that term | Say so, and ask the student to check the course, number or term |
 | 4 | ASU's class search isn't answering | If the student is waiting, say ASU's class search isn't responding and offer to try again in a few minutes. During a scheduled check, stay silent unless a `WARN` line printed |
 | 5 | ASU answered in an unexpected way | Say the seat checker needs an update. Never guess seat numbers |

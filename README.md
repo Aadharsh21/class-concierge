@@ -40,6 +40,7 @@ Cubbie: Seat open in CSE 340 (#21671, Claveau)! 2 seats left.
 - Checks every 15 minutes and stays quiet until something changes.
 - Asks once how you want alerts (a text, a phone call, or both) and remembers it. Change it any time with
   "just text me" or "call me instead".
+- Lets you pick no-call hours, like 11pm to 8am: an opening during those hours arrives as a text instead of a call.
 - Puts the add link in the text, ready to tap.
 - Send "send me a test alert" to see (and hear) exactly what an opening looks like.
 - Knows about reserved seats: if the only open seats are held for a specific major or cohort, it tells you

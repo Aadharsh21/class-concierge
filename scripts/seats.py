@@ -362,6 +362,8 @@ def load_state(sample: bool) -> dict:
     state.setdefault("watches", [])
     state.setdefault("fail_streak", 0)
     state.setdefault("alert_by", None)
+    state.setdefault("quiet", None)
+    state.setdefault("tz", None)
     return state
 
 
@@ -372,11 +374,99 @@ def parse_alert(text: str) -> str:
     return choice
 
 
-def alert_line(state: dict) -> str:
+def parse_clock(text: str) -> str:
+    m = re.fullmatch(r"\s*(\d{1,2})(?::(\d{2}))?\s*([ap])?\.?\s*m?\.?\s*", text or "", re.I)
+    if not m:
+        raise Stop(EXIT_INPUT, f"Couldn't read the time {text!r}. Use something like 11pm or 23:00.")
+    hour, minute, half = int(m.group(1)), int(m.group(2) or 0), (m.group(3) or "").lower()
+    if half:
+        if not 1 <= hour <= 12:
+            raise Stop(EXIT_INPUT, f"Couldn't read the time {text!r}. Use something like 11pm or 23:00.")
+        hour = hour % 12 + (12 if half == "p" else 0)
+    if hour > 23 or minute > 59:
+        raise Stop(EXIT_INPUT, f"Couldn't read the time {text!r}. Use something like 11pm or 23:00.")
+    return f"{hour:02d}:{minute:02d}"
+
+
+def parse_quiet(text: str) -> dict | None:
+    t = re.sub(r"\s+", " ", (text or "").strip().lower())
+    if t in ("off", "none", "no", "anytime", "any time", "call anytime", "always"):
+        return None
+    parts = re.split(r"\s*(?:-|to|until|till)\s*", t)
+    if len(parts) != 2:
+        raise Stop(EXIT_INPUT, f"Couldn't read the no-call hours {text!r}. Use something like \"11pm-8am\", or off.")
+    start, end = parse_clock(parts[0]), parse_clock(parts[1])
+    if start == end:
+        raise Stop(EXIT_INPUT, "The no-call hours need a different start and end time.")
+    return {"start": start, "end": end}
+
+
+def clock_label(hhmm: str) -> str:
+    hour, minute = int(hhmm[:2]), int(hhmm[3:])
+    text = f"{hour % 12 or 12}" + (f":{minute:02d}" if minute else "")
+    return f"{text} {'AM' if hour < 12 else 'PM'}"
+
+
+def in_window(minutes_now: int, quiet: dict) -> bool:
+    start = int(quiet["start"][:2]) * 60 + int(quiet["start"][3:])
+    end = int(quiet["end"][:2]) * 60 + int(quiet["end"][3:])
+    if start < end:
+        return start <= minutes_now < end
+    return minutes_now >= start or minutes_now < end  # the window runs past midnight
+
+
+def student_minutes(state: dict, override: str | None) -> int | None:
+    """Minutes past midnight in the student's time zone, or None if this computer can't tell."""
+    if override:
+        hhmm = parse_clock(override)
+        return int(hhmm[:2]) * 60 + int(hhmm[3:])
+    tz = state.get("tz")
+    if not tz:
+        return None
+    try:
+        from zoneinfo import ZoneInfo
+        now = datetime.now(ZoneInfo(tz))
+    except Exception:  # no time zone database here, or an unknown name
+        return None
+    return now.hour * 60 + now.minute
+
+
+def check_tz(name: str) -> str:
+    try:
+        from zoneinfo import ZoneInfo, available_timezones
+        if not available_timezones():  # this computer has no time zone database to check against
+            return name
+        ZoneInfo(name)
+    except ImportError:
+        return name
+    except Exception:
+        raise Stop(EXIT_INPUT, f"{name!r} isn't a time zone name. Use one like America/Phoenix.") from None
+    return name
+
+
+def quiet_text(state: dict) -> str:
+    quiet = state.get("quiet")
+    if not quiet:
+        return "Calls at any hour."
+    zone = f" {state['tz']}" if state.get("tz") else ""
+    return f"No calls {clock_label(quiet['start'])} to {clock_label(quiet['end'])}{zone}; texts only then."
+
+
+def alert_line(state: dict, now_minutes: int | None) -> str:
     choice = state.get("alert_by")
-    if choice in ALERT_CHOICES:
-        return f"  alert by: {choice} ({ALERT_CHOICES[choice]})"
-    return f"  alert by: both ({ALERT_CHOICES['both']}; the student never picked, so both is the default)"
+    picked = choice if choice in ALERT_CHOICES else "both"
+    note = "" if choice in ALERT_CHOICES else "; the student never picked, so both is the default"
+    quiet = state.get("quiet")
+    if picked in ("call", "both") and quiet:
+        window = f"{clock_label(quiet['start'])} to {clock_label(quiet['end'])}"
+        if now_minutes is None:
+            return (f"  alert by: {picked} ({ALERT_CHOICES[picked]}{note}), except no calls from {window} the "
+                    "student's time: if it's inside that window now, text the alert instead of calling")
+        if in_window(now_minutes, quiet):
+            now = f"{now_minutes // 60:02d}:{now_minutes % 60:02d}"
+            return (f"  alert by: text (they picked {picked}, but it's {clock_label(now)} for them, inside their "
+                    f"no-call hours of {window}, so text only)")
+    return f"  alert by: {picked} ({ALERT_CHOICES[picked]}{note})"
 
 
 def save_state(state: dict, sample: bool) -> None:
@@ -489,7 +579,7 @@ def cmd_watch_add(args, today: date) -> int:
     count = len(state["watches"])
     print(f"Watching {count} class{'es' if count != 1 else ''} in total.")
     if state["alert_by"] in ALERT_CHOICES:
-        print(f"ALERT-BY {state['alert_by']}: {ALERT_CHOICES[state['alert_by']]}")
+        print(f"ALERT-BY {state['alert_by']}: {ALERT_CHOICES[state['alert_by']]}. {quiet_text(state)}")
     else:
         print("ASK-ALERTS The student hasn't picked how to be alerted. Ask: text, call or both? "
               "Then run: alerts --set <choice>")
@@ -498,12 +588,26 @@ def cmd_watch_add(args, today: date) -> int:
 
 def cmd_alerts(args, today: date) -> int:
     state = load_state(args.is_sample)
+    changed = False
     if args.set:
         state["alert_by"] = parse_alert(args.set)
+        changed = True
+    if args.tz:
+        state["tz"] = check_tz(args.tz.strip())
+        changed = True
+    if args.quiet:
+        state["quiet"] = parse_quiet(args.quiet)
+        changed = True
+    if changed:
         save_state(state, args.is_sample)
     choice = state["alert_by"]
     if choice in ALERT_CHOICES:
-        print(f"ALERT-BY {choice}: {ALERT_CHOICES[choice]}")
+        print(f"ALERT-BY {choice}: {ALERT_CHOICES[choice]}. {quiet_text(state)}")
+        if choice in ("call", "both") and state.get("quiet") is None and not args.quiet:
+            print("ASK-QUIET Calls can come at any hour. Ask whether to skip calls at night and text instead, "
+                  "like 11pm-8am, then run: alerts --quiet <window> --tz <student's time zone> (or --quiet off)")
+        elif state.get("quiet") and not state.get("tz"):
+            print("ASK-TZ Run: alerts --tz <student's time zone, like America/Phoenix>, so no-call hours use their clock.")
     else:
         print("ALERT-BY not set. Ask the student: text, call or both?")
     return 0
@@ -549,7 +653,8 @@ def cmd_drill(args, today: date) -> int:
     print("TEST-ALERT This is a drill, not a real opening. Handle the next lines like NEW-OPEN, "
           "but start the call and the text with \"Test alert\".")
     print(f"NEW-OPEN {short_label(s)} has 2 open seats of {s['cap']}")
-    print(alert_line(load_state(args.is_sample)))
+    state = load_state(args.is_sample)
+    print(alert_line(state, student_minutes(state, args.now)))
     print("\n".join(link_lines("2271", "21671")))
     return 0
 
@@ -638,7 +743,7 @@ def cmd_check(args, today: date) -> int:
         if current == "OPEN" and previous != "OPEN":
             new_open += 1
             print(f"NEW-OPEN {label} has {s['open']} open seat{'s' if s['open'] != 1 else ''} of {s['cap']}")
-            print(alert_line(state))
+            print(alert_line(state, student_minutes(state, args.now)))
             print("\n".join(link_lines(w["term"], w["nbr"])))
         elif current == "OPEN":
             print(f"STILL-OPEN {label}, {seats_text(s)} (the student already knows)")
@@ -668,6 +773,7 @@ def build_parser() -> argparse.ArgumentParser:
                         help="use the saved copy in assets/ instead of the network, with its own watch list")
     common.add_argument("--sample-file", help=argparse.SUPPRESS)
     common.add_argument("--today", help="the student's local date as YYYY-MM-DD (default: today)")
+    common.add_argument("--now", help=argparse.SUPPRESS)  # the student's local time, for testing no-call hours
 
     parser = argparse.ArgumentParser(description="Watch full ASU classes and report when a seat opens.")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -705,6 +811,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     alerts = sub.add_parser("alerts", parents=[common], help="show or set how the student hears about an opening")
     alerts.add_argument("--set", help="text, call or both")
+    alerts.add_argument("--quiet", help='no calls in this window, texts instead: like "11pm-8am", or off')
+    alerts.add_argument("--tz", help="the student's time zone, like America/Phoenix")
     alerts.set_defaults(func=cmd_alerts)
     return parser
 
