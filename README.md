@@ -1,6 +1,7 @@
 # Seat Snipe
 
-Your ASU class is full. Text Cubbie, and it tells you the second a seat opens.
+Plan your ASU semester and snipe the seats. Text Cubbie your major, get the classes you need with the best-rated
+professors, and hear the second a seat opens.
 
 Seat Snipe is a [Cubbie](https://cubbie.ai) Skill. It watches Arizona State University's public class search every
 15 minutes and, the moment a seat opens in a class you're watching, alerts you the way you picked: a text with a
@@ -36,6 +37,11 @@ Cubbie: Seat open in CSE 340 (#21671, Claveau)! 2 seats left.
 
 ## What it does
 
+- Plans your next semester: tell it your major and semester, and it reads your official ASU major map to list
+  the critical courses and elective slots for that term.
+- Finds the easiest electives and the best-rated professors, using student reviews from Rate My Professors and
+  live seat counts, then offers to watch any full sections. Already have favorite professors? Tell it, and it uses
+  yours.
 - Watches as many classes as you want, on every ASU campus and ASU Online.
 - Checks every 15 minutes and stays quiet until something changes.
 - Asks once how you want alerts (a text, a phone call, or both) and remembers it. Change it any time with
@@ -52,6 +58,9 @@ Cubbie: Seat open in CSE 340 (#21671, Claveau)! 2 seats left.
 ## How it works
 
 - `SKILL.md` tells Cubbie how to find a class, confirm with you, set a 15-minute check-in, and when to call or text.
+- For planning, Cubbie reads your major map PDF from degrees.asu.edu, runs `scripts/seats.py compare` to see which
+  candidate courses are offered next term and who teaches them, and looks those professors up on Rate My
+  Professors with its own web search.
 - `scripts/seats.py` reads ASU's public class search (Python standard library only), works out real open seats
   (total minus taken, minus seats reserved for other groups), and remembers what it last saw under
   `~/.config/seat-snipe/`, so you get one alert per opening instead of one every 15 minutes.

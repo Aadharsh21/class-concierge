@@ -1,18 +1,22 @@
 ---
 name: seat-snipe
-description: Watches full ASU classes and alerts the student by text, phone call or both (their pick) the moment a seat opens, with a link to add the class. Use when an Arizona State University student says a class is full, asks to be told when a seat opens, wants to snipe or track a seat or a class number during registration, asks how many seats are left in a course, asks which classes are being watched, wants to change how they get alerts, or wants a test seat alert.
+description: Plans an ASU student's classes from their major map and student reviews, then watches full classes and alerts them by text, call or both the moment a seat opens. Use when an Arizona State University student asks which classes to register for next semester, what their major map requires, which electives or professors are easiest or best rated, says a class is full, asks to be told when a seat opens, wants to track a seat or class number during registration, asks how many seats are left, asks which classes are being watched, wants to change alerts or no-call hours, or wants a test seat alert. Not for study schedules or homework.
 ---
 
 # Seat Snipe
 
-Watches full classes on Arizona State University's public class search and tells the student the moment a
-seat opens, so they can grab it before anyone else. It covers every ASU campus and ASU Online, and only ASU.
+Helps an Arizona State University student get the classes they need: it reads their major map to say what next
+semester should look like, suggests the easiest electives and best-rated professors from student reviews, and
+watches full classes on ASU's public class search so the student hears the moment a seat opens. It covers every
+ASU campus and ASU Online, and only ASU.
 
 It never enrolls, drops or swaps classes for the student: My ASU needs their own sign-in. It sends the add
-link and the student adds the class themselves.
+link and the student adds the class themselves. Course choices are the student's; Seat Snipe only suggests.
 
 ## When to use
 
+- "what classes should I take next semester?" or "what's on my major map for spring?"
+- "what's the easiest HU elective?" or "who's the best professor for CSE 330?"
 - "CSE 365 is full, tell me when a seat opens"
 - "watch class 21671 for spring"
 - "any seats left in MAT 343 with Smith?"
@@ -20,7 +24,9 @@ link and the student adds the class themselves.
 - "just text me from now on", "call me instead" or "no calls after 11pm"
 - "send me a test alert"
 
-Not for choosing classes, degree planning, or anything that changes the student's enrollment.
+Not for study schedules, homework, or anything that changes the student's enrollment.
+
+To plan a semester, start at section 6. To watch a class, start at section 1.
 
 ## How it works
 
@@ -127,8 +133,59 @@ When the student wants to see what an alert looks like ("send me a test alert", 
 `python3 scripts/seats.py drill`. It prints a `NEW-OPEN` line built from saved sample data, without touching the
 network or the watch list. Handle it exactly like a real `NEW-OPEN`, following its `alert by` line (no-call hours
 included, so the student sees exactly what would happen right now), but start the call and the text with
-"Test alert" so it is never mistaken for a real seat. If the student asks for the test
-later ("in 5 minutes"), do it as a one-time check-in.
+"Test alert" so it is never mistaken for a real seat. If the student asks for the test later ("in 5
+minutes"), do it as a one-time check-in.
+
+### 6. Plan next semester: major map, electives and professors
+
+1. **Know the student.** Use what Cubbie remembers. Otherwise ask in one message: "What's your major, and which
+   semester are you going into? (like 'CSE, semester 6' or 'junior spring')". Then work out:
+   - the term on the map: semester 6 is Term 6. For transfer students or anyone off the usual pace, ask roughly how
+     many credits they've finished and use the term whose hour range covers that number.
+   - their catalog year, usually the fall they started at ASU. Someone going into semester 6 in spring 2027
+     started in fall 2024, so use 2024. Ask if it's unclear.
+
+   Remember the major, catalog year and term so the student isn't asked again.
+2. **Open their major map.** Search the web for "ASU major map <major>" and take the plan code from a
+   degrees.asu.edu link: the part right after `ASU00/`, like ESCSEBSE for Computer Systems Engineering BSE.
+   Then read the map's PDF:
+
+   ```text
+   https://degrees.asu.edu/major-map/ASU00/<PLAN CODE>/null/ALL/<CATALOG YEAR>/fetchpdf
+   ```
+
+   If it doesn't open, try the year before, and say which year's map you used.
+3. **Read their term.** Pull out the courses the map marks as critical (later terms call them necessary) with
+   their minimum grades, the term's other courses and requirements, and every elective slot (like "Upper Division
+   CSE Technical Elective" or "Upper Division HU or SB") with the approved course list the map gives for it.
+4. **Text the summary**, critical courses first (see Replies). If it runs past a phone screen, make a one-page
+   PDF of the plan, send it, and text only the highlights. Say that their degree audit in My ASU is the final word,
+   since the map is the recommended order, not their record.
+5. **Offer the shortlist:** "Want me to find the easiest electives and the best-rated professors?" On yes, work on
+   it as a background task and text the shortlist when it's ready:
+   1. For each elective slot, pick up to six candidates from the map's approved list. For a broad general studies
+      slot, also search the web for courses ASU students call easy in that area (Reddit's r/ASU is a good
+      source). Skip anything the student has taken or ruled out.
+   2. Check them all in one run, adding `--campus <their campus>`:
+
+      ```bash
+      python3 scripts/seats.py compare --term "<term>" --course "<SUBJECT NUMBER>" --course "<SUBJECT NUMBER>"
+      ```
+
+      Each line says whether the course is offered that term, how full it is, and who teaches it. Drop courses
+      that aren't offered.
+   3. For each instructor teaching a candidate or a critical course, search the web for
+      "<instructor> Arizona State University Rate My Professors" and read the overall rating, level of difficulty,
+      would-take-again percentage and number of ratings. Fewer than five ratings is weak evidence; say so.
+   4. Rank the electives: lower difficulty and higher rating first, then more open seats. Suggest the top three,
+      one line each: course, best professor, rating and difficulty, seats.
+   5. For each critical course, name the best-rated professor's section with its class number and seats.
+
+   Say the ratings come from student reviews on Rate My Professors and can be out of date. Never invent a rating,
+   a course or a professor.
+6. **The student's own picks win.** If they name the professors or courses they want ("CSE 330 with Smith"), use
+   those (`search --instructor "<name>"`). Remember professors they like or want to avoid for next time.
+7. **Hand off to watching:** end with "Want me to watch any of these?" A full section goes straight to section 2.
 
 ## Replies
 
@@ -145,6 +202,15 @@ Seats go fast. I'll keep watching until you tell me you got in.
 
 A call (call only) sounds like: "Hey, it's Cubbie. A seat just opened in CSE 340 with Claveau, class number
 2 1 6 7 1. Add it in My ASU now, seats go fast."
+
+A semester summary should look like this:
+
+```text
+Spring 2027 is Term 6 on your <major> map (<catalog year> catalog).
+Critical: <course>, <course> (C or better)
+Also: <course>, <course>, plus <requirement>
+Want me to find the easiest picks and the best-rated professors?
+```
 
 Never say the student is enrolled, and never report a seat the script didn't print.
 

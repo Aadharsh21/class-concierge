@@ -5,6 +5,7 @@ Reads ASU's public class search: no sign-in, no key, standard library only.
 
   python3 scripts/seats.py search --term "spring 2027" --course "CSE 340"
   python3 scripts/seats.py search --term 2271 --class 18607 --links
+  python3 scripts/seats.py compare --term spring --course "CSE 340" --course "CSE 365" --campus tempe
   python3 scripts/seats.py watch add --term 2271 --course "CSE 340" --class 21671
   python3 scripts/seats.py watch list
   python3 scripts/seats.py watch remove --class 21671        (or --all)
@@ -479,6 +480,54 @@ def save_state(state: dict, sample: bool) -> None:
 
 # ---------- commands ----------
 
+def by_campus(sections: list[dict], campus: str | None) -> list[dict]:
+    if not campus or campus.lower() in ("any", "all"):
+        return sections
+    want = campus.lower()
+    if want in ("online", "asu online", "icourse"):
+        return [s for s in sections if is_online(s)]
+    return [s for s in sections if want in s["campus"].lower()]
+
+
+def cmd_compare(args, today: date) -> int:
+    """One line per course: offered or not, how full, and who teaches it (for looking up reviews)."""
+    term = parse_term(args.term, today)
+    courses = list(dict.fromkeys(parse_course(c) for c in args.course))
+    campus = (args.campus or "").strip().lower()
+    if not campus or campus in ("any", "all"):
+        where = ""
+    elif campus in ("online", "asu online", "icourse"):
+        where = " (online sections)"
+    else:
+        where = f" at {campus.title()}"
+    print(f"{term_label(term)} (term {term}){where}, one line per course:")
+    for subject, catalog in courses:
+        try:
+            sections = [s for s in fetch(term, subject=subject, catalog=catalog, sample=args.sample_path)["sections"]
+                        if s["subject"] == subject and s["catalog"] == catalog]
+        except Stop as exc:
+            if exc.code == EXIT_UNREACHABLE:
+                raise
+            print(f"{subject} {catalog}: couldn't check ({exc})")
+            continue
+        sections = by_campus(sections, args.campus)
+        if not sections:
+            print(f"{subject} {catalog}: not offered{where} in {term_label(term)}")
+            continue
+        full = sum(1 for s in sections if s["status"] == "FULL")
+        open_seats = sum(s["open"] for s in sections)
+        teachers: dict[str, list[int]] = {}
+        for s in sections:
+            counts = teachers.setdefault(s["instructors"][0], [0, 0])
+            counts[0] += 1
+            counts[1] += s["open"]
+        who = "; ".join(f"{name} ({n} section{'s' if n != 1 else ''}, {seats} open)"
+                        for name, (n, seats) in sorted(teachers.items(), key=lambda kv: (-kv[1][0], kv[0])))
+        print(f"{subject} {catalog} {sections[0]['title']}: {len(sections)} section{'s' if len(sections) != 1 else ''}, "
+              f"{full} full, {open_seats} open seats | {who}")
+    return 0
+
+
 def cmd_search(args, today: date) -> int:
     term = parse_term(args.term, today)
     if args.course:
@@ -501,10 +550,7 @@ def cmd_search(args, today: date) -> int:
         raise Stop(EXIT_NOT_FOUND, f"{what} isn't on ASU's class search for {term_label(term)} (term {term}).")
 
     shown = sections
-    if args.campus and args.campus.lower() not in ("any", "all"):
-        want = args.campus.lower()
-        shown = [s for s in shown if (is_online(s) if want in ("online", "asu online", "icourse")
-                                      else want in s["campus"].lower())]
+    shown = by_campus(shown, args.campus)
     if args.instructor:
         who = args.instructor.lower()
         shown = [s for s in shown if any(who in name.lower() for name in s["instructors"])]
@@ -788,6 +834,13 @@ def build_parser() -> argparse.ArgumentParser:
     search.add_argument("--links", action="store_true", help="print the add and view links for each section")
     search.set_defaults(func=cmd_search)
 
+    compare = sub.add_parser("compare", parents=[common],
+                             help="one line per course: offered or not, how full, and who teaches it")
+    compare.add_argument("--term", default="next", help='"spring 2027", "fall", "next" or a code like 2271')
+    compare.add_argument("--course", action="append", required=True, help='like "CSE 340"; repeat for more')
+    compare.add_argument("--campus", help="tempe, poly, west, downtown, online or any")
+    compare.set_defaults(func=cmd_compare)
+
     watch = sub.add_parser("watch", help="add, list or remove watched classes")
     watch_sub = watch.add_subparsers(dest="action", required=True)
     add = watch_sub.add_parser("add", parents=[common], help="start watching classes")
@@ -832,4 +885,8 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except BrokenPipeError:  # whoever was reading stopped early (piped into head, say); nothing to report
+        os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+        sys.exit(0)
