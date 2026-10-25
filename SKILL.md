@@ -1,24 +1,26 @@
 ---
 name: seat-snipe
-description: Plans an ASU student's classes from their major map and student reviews, then watches full classes and alerts them by text, call or both the moment a seat opens. Use when an Arizona State University student asks which classes to register for next semester, what their major map requires, which electives or professors are easiest or best rated, says a class is full, asks to be told when a seat opens, wants to track a seat or class number during registration, asks how many seats are left, asks which classes are being watched, wants to change alerts or no-call hours, or wants a test seat alert. Not for study schedules or homework.
+description: Recommends ASU classes and best-rated professors, sends Class Search links to pick sections, then tracks class numbers and alerts by text or call when a seat opens. Use when an Arizona State University student asks which classes to take next semester, what their major map requires, which electives or professors are easiest or best rated, asks to check or track a course or class number, says a class is full, asks to be told when a seat opens, asks whether the checks are going through, asks which classes are being watched, wants to change alerts or no-call hours, or wants a test seat alert. Not for study schedules or homework.
 ---
 
 # Seat Snipe
 
 Helps an Arizona State University student get the classes they need: it reads their major map to say what next
-semester should look like, suggests the easiest electives and best-rated professors from student reviews, and
-watches full classes on ASU's public class search so the student hears the moment a seat opens. It covers every
-ASU campus and ASU Online, and only ASU.
+semester should look like and suggests the easiest electives and best-rated professors from student reviews. For
+every course it sends the Class Search link, so the student checks the live sections on their own phone and texts
+back the class numbers they want. Then it watches those class numbers and alerts the student when a seat opens. It
+covers every ASU campus and ASU Online, and only ASU.
 
 It never enrolls, drops or swaps classes for the student: My ASU needs their own sign-in. It sends the add
 link and the student adds the class themselves. Course choices are the student's; Seat Snipe only suggests.
 
 ## When to use
 
-- "what classes should I take next semester?" or "what's on my major map for spring?"
+- "I'm in CSE, going into semester 6, what should I take?" or "what's on my major map for spring?"
 - "what's the easiest HU elective?" or "who's the best professor for CSE 330?"
-- "CSE 365 is full, tell me when a seat opens"
-- "watch class 21671 for spring" or "my BIO 181 lab is full too"
+- "check CSE 412 for spring" or "CSE 365 is full, tell me when a seat opens"
+- "track 21671 and 31637" or "my BIO 181 lab is full too"
+- "are the checks going through?"
 - "any seats left in MAT 343 with Smith?"
 - "what classes are you watching for me?" or "I got in, stop watching CSE 365"
 - "just text me from now on", "call me if I don't answer" or "no calls after 11pm"
@@ -26,8 +28,9 @@ link and the student adds the class themselves. Course choices are the student's
 
 Not for study schedules, homework, or anything that changes the student's enrollment.
 
-To plan a semester, start at section 6. To watch a class, start at section 1. Whenever a command prints `BLOCKED`,
-see section 7.
+Where to start: planning a semester or asking about professors, section 6. A course named ("check CSE 412"),
+section 1. Class numbers given ("track 21671"), straight to section 2. Whenever a command prints `BLOCKED`, see
+section 7.
 
 ## How it works
 
@@ -35,31 +38,37 @@ Run every command from this Skill's folder. `scripts/seats.py` reads ASU's publi
 no key. It keeps the watch list and the student's alert choice under `~/.config/seat-snipe/`, so they carry
 over between conversations.
 
-### 1. Find the class
+### 1. A course: send the Class Search link
+
+The student picks sections on their own phone, where ASU's Class Search always works.
 
 1. Work out the term from what the student said ("spring", "fall 2027") and pass it as `--term`. If they didn't
    say, pass `--term next` and mention which term you used.
-2. Run:
+2. Get the link and send it on its own line:
+
+   ```bash
+   python3 scripts/seats.py link --term "<term>" --course "<SUBJECT NUMBER>"
+   ```
+
+   Repeat `--course` for several courses. Ask the student to open it, pick the sections they want, and text back
+   the class numbers (the 5-digit numbers, like 21671), or just send a screenshot of the results.
+3. You can also try a quick summary of the sections:
 
    ```bash
    python3 scripts/seats.py search --term "<term>" --course "<SUBJECT NUMBER>"
    ```
 
    Add `--campus tempe` (or `poly`, `west`, `downtown`, `online`) or `--instructor "<last name>"` when the student
-   mentioned one. If they gave a 5-digit class number instead of a course, use `--class <number>`.
-3. Each line is one section: class number, days and time, place, instructor, seats. Labs, recitations and other
-   non-lecture sections are labeled (like `#99001 PHY 122-1101 Lab`) and have their own class numbers and seats.
-   Show the student only the sections that fit what they asked for (at most five), one short line each, and ask
-   which ones to watch. Suggest the full ones that match as the default.
-4. If the course comes with a lab or recitation (in the same listing, or as a separate course like a lecture's
-   companion lab), ask which one the student wants too: they need a seat in both, so check both.
-
-If the student only wanted to know how many seats are left, answer from the search and stop here.
+   mentioned one. Each line is one section: class number, days and time, place, instructor, seats. Labs and
+   recitations are labeled (like `#99001 PHY 122-1101 Lab`). Show only the sections that fit what they asked for, at
+   most five. If it prints `BLOCKED`, skip the summary: the link already has everything.
+4. If the course comes with a lab or recitation, remind the student they need a seat in both, so they should send
+   both class numbers.
 
 ### 2. Ask how to alert them, then start watching
 
-1. If a section the student wants already has open seats, say so right away and send its add link
-   (`search ... --links` prints it). They may still want it watched in case it fills before they can enroll.
+1. If you already know a section the student wants has open seats (from `search`), say so right away and send its
+   add link (`search ... --links` prints it). They may still want it watched in case it fills before they enroll.
 2. Run `python3 scripts/seats.py alerts` to see whether the student already picked how to be alerted.
    - `ALERT-BY not set`: before watching anything, ask in one message, for example:
 
@@ -73,8 +82,8 @@ If the student only wanted to know how many seats are left, answer from the sear
 
      Their answer is also their yes to start. If they reply just "yes" or "ok", use both. Save option 4 as
      `escalate`.
-   - If they picked anything with a call (2, 3 or 4), ask one more question: "Should I skip calls at night and just text then? Give
-     me a window like 11pm to 8am, or say call anytime." Suggest 11pm to 8am as the default.
+   - If they picked anything with a call (2, 3 or 4), ask one more question: "Should I skip calls at night and
+     just text then? Give me a window like 11pm to 8am, or say call anytime." Suggest 11pm to 8am as the default.
    - Save the answers in one command, with the student's time zone so the window follows their clock:
 
      ```bash
@@ -84,14 +93,17 @@ If the student only wanted to know how many seats are left, answer from the sear
      Leave out `--quiet` and `--tz` when they picked text.
    - A saved choice: confirm with it instead, for example "I'll check #21671 every 15 min and call + text you,
      same as last time. Start?" Start only after the student says yes.
-3. Run:
+3. Run, with the class numbers the student sent (add `--course "<SUBJECT NUMBER>"` when you know it):
 
    ```bash
-   python3 scripts/seats.py watch add --term "<term>" --course "<SUBJECT NUMBER>" --class <number>
+   python3 scripts/seats.py watch add --term "<term>" --class <number> --class <number>
    ```
 
-   Repeat `--class` to watch several sections of the same course in one go. If the output says `ASK-ALERTS`, ask
-   the alert question above and save the answer with `alerts --set`.
+   This works even while ASU is blocking Cubbie: the class numbers are saved, and the course, section and seats
+   fill in on the first check that gets through (the output says so). If the output says `ASK-ALERTS`, ask the
+   alert question above and save the answer with `alerts --set`. A `NOT-FOUND` line means ASU answered and that
+   number doesn't exist for that term: ask the student to double-check it. An `ALREADY-OPEN` line means that
+   section has seats right now: tell the student and send its add link straight away.
 
    **Lecture and lab:** if only one of the pair is full, watch just that one. If both are full, watch them as a
    set, so the alert comes only when both have a seat (a lecture seat is no use while the lab is still full).
@@ -105,7 +117,8 @@ If the student only wanted to know how many seats are left, answer from the sear
    "Seat Snipe: from the seat-snipe Skill's folder, run `python3 scripts/seats.py check` and follow the
    Scheduled check steps in its SKILL.md. Contact the student only when those steps say to."
    One check-in covers every watched class, so never create a second one.
-5. Reply in one or two lines: what is being watched, and how you'll alert them.
+5. Reply in one or two lines: what is being watched, how you'll alert them, and that they can ask "are the checks
+   going through?" any time.
 
 ### 3. Scheduled check (every 15 minutes, on its own)
 
@@ -129,6 +142,8 @@ Run `python3 scripts/seats.py check` and act only on these lines:
 
   When a `NEW-OPEN` names a set (like a lecture and its lab), every class in it has a seat now: say they need to
   add all of them, and text each add link on its own line.
+- `FIRST-LOOK`: the first check that got through for a class added by number. Text the student once with the
+  course, section and seats, like "Got through to ASU: #21671 is CSE 340 with Claveau, full 110/110. Watching it."
 - `NEW-RESERVED`: seats opened, but all are reserved for specific groups of students (a major or cohort, for
   example). Text once, never call, with the view link so they can check whether they qualify.
 - `ENDED`: watching stopped for that class (the last day to add it passed, it was cancelled, or it left the class
@@ -152,6 +167,9 @@ again they hear about it again.
   `python3 scripts/seats.py alerts --set <text|call|both|escalate>`, then confirm the change in one line.
 - "No calls after 10pm", "don't call before 9", "call me anytime":
   `python3 scripts/seats.py alerts --quiet "<window, like 10pm-8am>" --tz "<time zone>"`, or `--quiet off`.
+- "Are the checks going through?", "is it working?": `python3 scripts/seats.py history`. Relay it plainly, like
+  "3 of the last 4 checks got through to ASU; the last one 6 minutes ago." The times also show whether checks really
+  run every 15 minutes. `watch list` ends with the same summary.
 - Whenever a command prints `NO-WATCHES`, delete the Seat Snipe check-in.
 
 ### 5. Test alert
@@ -164,6 +182,9 @@ included, so the student sees exactly what would happen right now), but start th
 minutes"), do it as a one-time check-in.
 
 ### 6. Plan next semester: major map, electives and professors
+
+If the student names a specific course ("best professor for CSE 412?"), skip the map and go straight to the
+professors in step 5.3 for that course, then send its Class Search link (section 1).
 
 1. **Know the student.** Use what Cubbie remembers. Otherwise ask in one message: "What's your major, and which
    semester are you going into? (like 'CSE, semester 6' or 'junior spring')". Then work out:
@@ -193,26 +214,31 @@ minutes"), do it as a one-time check-in.
    1. For each elective slot, pick up to six candidates from the map's approved list. For a broad general studies
       slot, also search the web for courses ASU students call easy in that area (Reddit's r/ASU is a good
       source). Skip anything the student has taken or ruled out.
-   2. Check them all in one run, adding `--campus <their campus>`:
+   2. Try one run to see which are offered next term and who teaches them, adding `--campus <their campus>`:
 
       ```bash
       python3 scripts/seats.py compare --term "<term>" --course "<SUBJECT NUMBER>" --course "<SUBJECT NUMBER>"
       ```
 
-      Each line says whether the course is offered that term, how full it is, and who teaches it. Drop courses
-      that aren't offered.
-   3. For each instructor teaching a candidate or a critical course, search the web for
-      "<instructor> Arizona State University Rate My Professors" and read the overall rating, level of difficulty,
-      would-take-again percentage and number of ratings. Fewer than five ratings is weak evidence; say so.
-   4. Rank the electives: lower difficulty and higher rating first, then more open seats. Suggest the top three,
-      one line each: course, best professor, rating and difficulty, seats.
-   5. For each critical course, name the best-rated professor's section with its class number and seats.
+      If it prints `BLOCKED`, carry on without it: the student will see who teaches each section on Class Search.
+   3. For each course's professors, search the web for "<course> Arizona State University Rate My Professors"
+      (and "<instructor> Arizona State University Rate My Professors" for names from `compare`). Read the overall
+      rating, level of difficulty, would-take-again percentage and number of ratings. Fewer than five ratings is
+      weak evidence; say so. Without `compare`, say these are professors who have taught the course, and the
+      student should check who's teaching it next term on Class Search.
+   4. Rank the electives: lower difficulty and higher rating first, then more open seats when you know them.
+      Suggest the top three, one line each: course, best professor, rating and difficulty.
+   5. For each critical course, name the best-rated professor, plus the section and class number when `compare`
+      or `search` showed it.
 
    Say the ratings come from student reviews on Rate My Professors and can be out of date. Never invent a rating,
    a course or a professor.
-6. **The student's own picks win.** If they name the professors or courses they want ("CSE 330 with Smith"), use
-   those (`search --instructor "<name>"`). Remember professors they like or want to avoid for next time.
-7. **Hand off to watching:** end with "Want me to watch any of these?" A full section goes straight to section 2.
+6. **The student's own picks win.** If they name the professors or courses they want ("CSE 330 with Smith"), go
+   with those. Remember professors they like or want to avoid for next time.
+7. **Hand off with links:** send the Class Search link for every course you recommended
+   (`python3 scripts/seats.py link --term "<term>" --course "<SUBJECT NUMBER>" --course ...`), each on its own line,
+   and end with "Pick your sections there and text me the class numbers. I'll track them." Their class numbers go
+   straight to section 2.
 
 ### 7. When ASU blocks Cubbie (exit code 6, `BLOCKED`)
 
@@ -220,12 +246,13 @@ ASU's class search blocks Cubbie's servers some of the time, even though it work
 Don't open the class search in Cubbie's browser to get around this, and don't ask the student to take over the
 browser for a verification check: ASU sends Cubbie's browser to a sign-in page even after the check.
 
-- **The student is waiting (search, compare, watch add):** say it in one line, like "ASU's class search is blocking
-  me right now." Send them the link the script printed so they can open it on their phone, and ask for a
-  screenshot. Read the class numbers, days and times, instructors and "Open seats: X of Y" lines from the
-  screenshot and use them exactly as you would the script's output. Offer to try the live lookup again later.
-- **Watching from a screenshot:** run the same `watch add` command with one `--seen <class number>=<open>/<total>`
-  per class, like `--seen 21671=0/110`. The scheduled checks then keep trying ASU directly.
+- **The student is waiting (search or compare):** say it in one line, like "ASU's class search is blocking me right
+  now." Send the Class Search link (the script printed it) so they can open it on their phone and text back the
+  class numbers they want, or send a screenshot. From a screenshot, read the class numbers, days and times,
+  instructors and "Open seats: X of Y" lines and use them exactly as you would the script's output.
+- **watch add never needs this:** class numbers are saved even while ASU is blocking, and fill in later. If the
+  student sent a screenshot, you can add `--seen <class number>=<open>/<total>` per class so Cubbie starts from the
+  seats it showed, like `--seen 21671=0/110`.
 - **A screenshot arrives any time later:** read it and run
   `python3 scripts/seats.py check --seen <class number>=<open>/<total>` with one `--seen` per watched class you can
   see, then act on its lines as section 3 says.
@@ -266,6 +293,17 @@ Also: <course>, <course>, plus <requirement>
 Want me to find the easiest picks and the best-rated professors?
 ```
 
+The hand-off after planning should look like this, with one Class Search link per course on its own line:
+
+```text
+Best picks for spring:
+- <course> with <professor> (<rating>, <difficulty>)
+- <course> with <professor> (<rating>, <difficulty>)
+Pick your sections here, then text me the class numbers:
+<Class Search link>
+<Class Search link>
+```
+
 Never say the student is enrolled, and never report a seat the script didn't print.
 
 ## When something fails
@@ -276,7 +314,7 @@ Never say the student is enrolled, and never report a seat the script didn't pri
 | 3 | Not on ASU's class search for that term | Say so, and ask the student to check the course, number or term |
 | 4 | ASU's class search isn't answering | If the student is waiting, say ASU's class search isn't responding and offer to try again in a few minutes. During a scheduled check, stay silent unless a `WARN` line printed |
 | 5 | ASU answered in an unexpected way | Say the seat checker needs an update. Never guess seat numbers |
-| 6 | ASU blocked Cubbie (`BLOCKED`) | If the student is waiting, say so in one line and ask for a screenshot (section 7). During a scheduled check, stay silent unless a `WARN` line printed |
+| 6 | ASU blocked Cubbie (`BLOCKED`) | If the student is waiting, say so in one line, send the Class Search link and ask for the class numbers or a screenshot (section 7). During a scheduled check, stay silent unless a `WARN` line printed |
 
 Without scheduled check-ins or calls (when this Skill runs outside Cubbie), run `check` whenever the student asks
 and tell them to ask again later.

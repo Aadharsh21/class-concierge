@@ -65,15 +65,15 @@ your elective slots.
 
 *"Who's the best professor for CSE 330?"*
 
-The **easiest electives** and **best-rated sections**, from Rate My Professors reviews plus live seats. Got
-favorites already? Your picks win.
+The **easiest electives** and **best-rated professors** from Rate My Professors reviews, plus a **Class Search link**
+for each course so you pick the exact section on your phone. Got favorites already? Your picks win.
 
 </td>
 <td width="33%" valign="top">
 
 ### 🎯 Snipe
 
-*"Watch CSE 340 for spring."*
+*"Track 21671."*
 
 Checks ASU **every 15 minutes** and alerts you the second a seat opens, with the add link ready to tap.
 <sub>ASU sometimes blocks these checks; see Honest limits.</sub>
@@ -86,7 +86,9 @@ Checks ASU **every 15 minutes** and alerts you the second a seat opens, with the
 
 | | |
 | --- | --- |
-| 💬 **Plain English** | "check CSE 412 for spring" just works. No class numbers needed: pick a section by its time or professor. |
+| 🔗 **Class Search links** | Name a course and Cubbie sends its live Class Search link. Pick sections on your phone and text back the class numbers. |
+| 🎯 **Track by class number** | "track 21671" starts right away, even while ASU is blocking Cubbie. The course, section and seats fill in on the first check that gets through. |
+| 📊 **See if checks get through** | "are the checks going through?" shows the recent checks, when they ran, and how many reached ASU. |
 | 🔒 **Honest seat counts** | Separates seats anyone can take from seats reserved for specific majors or cohorts. |
 | 🧪 **Lecture + lab sets** | Need both? Watch them together, and the alert only comes when both have a seat. |
 | 📞 **Alerts your way** | A text with the add link, a call, both, or a text first with a call if you don't reply in 5 minutes. |
@@ -102,8 +104,9 @@ Checks ASU **every 15 minutes** and alerts you the second a seat opens, with the
 
 ```mermaid
 flowchart LR
-    A["💬 watch CSE 340"] --> B["🔎 Live sections from ASU<br/>you pick one"]
-    B --> C["⏱️ Cubbie check-in<br/>every 15 min"]
+    A["💬 check CSE 340"] --> B["🔗 Class Search link<br/>you pick a section"]
+    B --> T["🎯 track 21671"]
+    T --> C["⏱️ Cubbie check-in<br/>every 15 min"]
     C --> D{"Seat open<br/>to anyone?"}
     D -- "not yet" --> C
     D -- "yes" --> E{"Inside your<br/>no-call hours?"}
@@ -123,11 +126,11 @@ https://github.com/Aadharsh21/seat-snipe
 
 Then try any of these:
 
-- *"what should I take next semester?"*
-- *"check CSE 412 for spring 2027"*
-- *"watch the hybrid CSE 340 section and call me when a seat opens"*
-- *"no calls after 11pm"*
-- *"send me a test alert"*
+- *"I'm in CSE, going into semester 6, what should I take?"*
+- *"best professor for CSE 412?"*
+- *"check CSE 340 for spring"*, then *"track 21671"*
+- *"are the checks going through?"*
+- *"no calls after 11pm"* or *"send me a test alert"*
 
 ## 🛡️ What it will never do
 
@@ -142,7 +145,7 @@ Then try any of these:
 ```text
 seat-snipe/
 ├── SKILL.md             what Cubbie reads: when to use it, every step, reply style, failure handling
-├── scripts/seats.py     search · compare · watch · check · alerts · drill · ack · followup · diagnose
+├── scripts/seats.py     link · search · compare · watch · check · history · alerts · drill · ack · followup · diagnose
 ├── tests/               unit tests for how ASU's answers and failures are handled
 ├── assets/              a saved real ASU response for --sample runs, and this README's graphic
 └── README.md

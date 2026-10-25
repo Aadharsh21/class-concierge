@@ -12,6 +12,8 @@ Reads ASU's public class search: no sign-in, no key, standard library only.
   python3 scripts/seats.py alerts --set both                  (text, call or both)
   python3 scripts/seats.py check                              (the scheduled check)
   python3 scripts/seats.py drill                              (a test alert)
+  python3 scripts/seats.py history                            (did the recent checks get through?)
+  python3 scripts/seats.py link --term spring --course "CSE 412"  (Class Search link for the student's phone)
   python3 scripts/seats.py diagnose --term 2271 --course "CSE 412"   (why lookups fail; changes nothing)
 
 Add --sample to any command to use the saved copy in assets/ instead of the network.
@@ -351,6 +353,13 @@ def seen_section(term: str, nbr: str, subject: str, catalog: str, open_: int, to
             "room": "", "instructors": ["Staff"], "kind": "", "cap": total, "taken": max(total - open_, 0),
             "open": open_, "open_reserved": 0, "status": "OPEN" if open_ > 0 else "FULL", "deadline": "",
             "synthetic": True, "label": label or (f"#{nbr} {subject} {catalog}".strip() if subject else f"#{nbr}")}
+
+
+def blind_section(term: str, nbr: str, subject: str, catalog: str) -> dict:
+    """A class added by number while ASU wasn't answering: nothing is known yet but the number."""
+    section = seen_section(term, nbr, subject, catalog, 0, 0)
+    section.update(status=None, blind=True, cap=0, taken=0, open=0)
+    return section
 
 
 def label_of(s: dict) -> str:
@@ -737,16 +746,28 @@ def cmd_watch_add(args, today: date) -> int:
             subject, catalog = courses[0] if len(courses) == 1 else ("", "")
             found[nbr] = seen_section(term, nbr, subject, catalog, open_, total)
     todo = [n for n in nbrs if n not in found]
+    lookup_problem: Stop | None = None
     if todo:
-        for subject, catalog in courses:
-            for s in fetch(term, subject=subject, catalog=catalog, sample=args.sample_path)["sections"]:
-                if s["nbr"] in todo:
-                    found[s["nbr"]] = s
-        for nbr in todo:
-            if nbr not in found:
-                for s in fetch(term, keywords=nbr, sample=args.sample_path)["sections"]:
-                    if s["nbr"] == nbr:
-                        found[nbr] = s
+        try:
+            for subject, catalog in courses:
+                for s in fetch(term, subject=subject, catalog=catalog, sample=args.sample_path)["sections"]:
+                    if s["nbr"] in todo:
+                        found[s["nbr"]] = s
+            for nbr in todo:
+                if nbr not in found:
+                    for s in fetch(term, keywords=nbr, sample=args.sample_path)["sections"]:
+                        if s["nbr"] == nbr:
+                            found[nbr] = s
+        except Stop as exc:
+            if exc.code not in (EXIT_BLOCKED, EXIT_UNREACHABLE, EXIT_UNEXPECTED):
+                raise
+            # ASU didn't answer just now. Watch the class numbers anyway; the first check that gets through
+            # fills in the course, section and seats.
+            lookup_problem = exc
+            subject, catalog = courses[0] if len(courses) == 1 else ("", "")
+            for nbr in todo:
+                if nbr not in found:
+                    found[nbr] = blind_section(term, nbr, subject, catalog)
     missing = [n for n in nbrs if n not in found]
     if not found:
         raise Stop(EXIT_NOT_FOUND, f"Couldn't find class #{', #'.join(missing)} for {term_label(term)}. "
@@ -774,7 +795,7 @@ def cmd_watch_add(args, today: date) -> int:
             continue
         entry = {"term": term, "nbr": nbr, "subject": s["subject"], "catalog": s["catalog"], "label": label,
                  "deadline": s["deadline"], "last_status": s["status"], "missing": 0,
-                 "last_checked": datetime.now().isoformat(timespec="minutes")}
+                 "last_checked": None if s.get("blind") else datetime.now().isoformat(timespec="minutes")}
         existing = next((w for w in state["watches"] if w["term"] == term and w["nbr"] == nbr), None)
         entry["group"] = group if args.together else (existing or {}).get("group")
         if existing:
@@ -783,7 +804,10 @@ def cmd_watch_add(args, today: date) -> int:
             entry["added"] = today.isoformat()
             state["watches"].append(entry)
         added += 1
-        if s["status"] == "OPEN":
+        if s.get("blind"):
+            print(f"WATCHING {label} for {term_label(term)}. ASU didn't answer just now ({lookup_problem}), so the "
+                  "course, section and seats fill in on the first check that gets through.")
+        elif s["status"] == "OPEN":
             print(f"ALREADY-OPEN {label} has {s['open']} open seat{'s' if s['open'] != 1 else ''} right now")
             print("\n".join(link_lines(term, nbr)))
         else:
@@ -879,6 +903,40 @@ def ago(iso: str | None) -> str:
     return f"{mins // (24 * 60)} days ago"
 
 
+CHECK_WORDS = {"ok": "got through", "blocked": "blocked", "failed": "no answer", "screenshot": "screenshot"}
+
+
+def log_check(state: dict, result: str) -> None:
+    log = state.setdefault("log", [])
+    log.append({"at": datetime.now().isoformat(timespec="seconds"), "result": result})
+    del log[:-24]
+
+
+def check_summary(state: dict) -> list[str]:
+    log = state.get("log") or []
+    live = [e for e in log if e.get("result") in ("ok", "blocked", "failed")]
+    if not live:
+        return ["CHECKS none have run yet; the first one runs within 15 minutes of starting a watch."]
+    ok = sum(1 for e in live if e["result"] == "ok")
+    last_ok = next((e for e in reversed(live) if e["result"] == "ok"), None)
+    return [f"CHECKS {ok} of the last {len(live)} got through to ASU. Last one that got through: "
+            f"{ago(last_ok['at']) if last_ok else 'none yet'}.",
+            "  newest first: " + " | ".join(f"{CHECK_WORDS.get(e['result'], e['result'])} {ago(e['at'])}"
+                                            for e in list(reversed(log))[:8])]
+
+
+def cmd_history(args, today: date) -> int:
+    print("\n".join(check_summary(load_state(args.is_sample))))
+    return 0
+
+
+def cmd_link(args, today: date) -> int:
+    term = parse_term(args.term, today)
+    for subject, catalog in dict.fromkeys(parse_course(c) for c in args.course):
+        print(f"{subject} {catalog}, {term_label(term)}: {COURSE_URL.format(subject=subject, catalog=catalog, term=term)}")
+    return 0
+
+
 def cmd_watch_list(args, today: date) -> int:
     state = load_state(args.is_sample)
     if not state["watches"]:
@@ -890,8 +948,12 @@ def cmd_watch_list(args, today: date) -> int:
         partners = [o["nbr"] for o in state["watches"] if w.get("group") and o.get("group") == w["group"]
                     and o["nbr"] != w["nbr"]]
         together = f" (together with #{', #'.join(partners)})" if partners else ""
-        print(f"{w['label']}{together}, {term_label(w['term'])}: {w.get('last_status', '?')} when last checked "
-              f"{ago(w.get('last_checked'))}, watching since {w.get('added', '?')}")
+        if w.get("last_status"):
+            seen = f"{w['last_status']} when last checked {ago(w.get('last_checked'))}"
+        else:
+            seen = "waiting for the first check that gets through to ASU"
+        print(f"{w['label']}{together}, {term_label(w['term'])}: {seen}, watching since {w.get('added', '?')}")
+    print("\n".join(check_summary(state)))
     return 0
 
 
@@ -994,6 +1056,7 @@ def cmd_check(args, today: date) -> int:
         if exc.code not in (EXIT_UNREACHABLE, EXIT_UNEXPECTED, EXIT_BLOCKED):
             raise
         state["fail_streak"] = state.get("fail_streak", 0) + 1
+        log_check(state, "blocked" if exc.code == EXIT_BLOCKED else "failed")
         save_state(state, args.is_sample)
         streak = state["fail_streak"]
         if streak in (WARN_AFTER, WARN_AGAIN_AFTER):
@@ -1004,6 +1067,7 @@ def cmd_check(args, today: date) -> int:
 
     state["fail_streak"] = 0
     state["verify_streak"] = 0
+    log_check(state, "screenshot" if seen else "ok")
     now = datetime.now().isoformat(timespec="minutes")
     now_minutes = student_minutes(state, args.now)
     alert = alert_line(state, now_minutes)
@@ -1033,6 +1097,9 @@ def cmd_check(args, today: date) -> int:
         w["missing"] = 0
         if not s.get("synthetic"):
             w["label"] = short_label(s)
+            for key in ("subject", "catalog", "deadline"):  # a class added by number alone gets its details now
+                if not w.get(key):
+                    w[key] = s[key]
         if s["status"] == "CANCELLED":
             print(f"ENDED {w['label']} was cancelled by ASU, so watching stopped.")
             continue
@@ -1083,6 +1150,9 @@ def cmd_check(args, today: date) -> int:
             alerted.append(w["label"])
         elif current == "OPEN":
             print(f"STILL-OPEN {w['label']}, {seats_text(s)} (the student already knows)")
+        elif previous is None and current in ("FULL", "RESERVED"):
+            print(f"FIRST-LOOK {w['label']}, {seats_text(s)}. First check that got through for this class: text the "
+                  "student once with these details.")
         elif current == "RESERVED" and previous == "FULL":
             print(f"NEW-RESERVED {w['label']} has {s['open_reserved']} seats open, but all are reserved "
                   "for specific groups of students")
@@ -1164,6 +1234,14 @@ def build_parser() -> argparse.ArgumentParser:
     check.add_argument("--page-blocked", action="store_true",
                        help="the browser got a human check or sign-in screen instead of the class list")
     check.set_defaults(func=cmd_check, on_blocked=blocked_check)
+
+    history = sub.add_parser("history", parents=[common], help="the recent checks and how many got through")
+    history.set_defaults(func=cmd_history)
+
+    link = sub.add_parser("link", parents=[common], help="the Class Search link for a course, for the student's phone")
+    link.add_argument("--term", default="next")
+    link.add_argument("--course", action="append", required=True, help='like "CSE 412"; repeat for more')
+    link.set_defaults(func=cmd_link)
 
     drill = sub.add_parser("drill", parents=[common], help="print a test alert from the saved sample data")
     drill.set_defaults(func=cmd_drill)
