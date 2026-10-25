@@ -54,6 +54,9 @@ CAMPUSES = {"TEMPE": "Tempe", "POLY": "Polytechnic", "WEST": "West Valley", "DTP
             "ASUONLINE": "ASU Online", "ICOURSE": "iCourse", "CALHC": "Lake Havasu", "AWC": "Yuma"}
 MODES = {"P": "in person", "HY": "hybrid", "OL": "online", "IC": "iCourse"}
 NOT_ROOMS = {"INTRT", "TBA", "ONLINE", "ICOURSE", "ASUONLINE", "ARR"}  # placeholders, not real rooms
+KINDS = {"LEC": "Lecture", "LAB": "Lab", "LABORATORY": "Lab", "REC": "Recitation", "DIS": "Discussion",
+         "SEM": "Seminar", "STU": "Studio", "ACT": "Activity", "CLN": "Clinical", "FLD": "Field work",
+         "IND": "Independent study", "INT": "Internship", "PRA": "Practicum", "WKS": "Workshop"}
 DAYS = [("MON", "M"), ("TUES", "T"), ("WED", "W"), ("THURS", "Th"), ("FRI", "F"), ("SAT", "Sa"), ("SUN", "Su")]
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 ALERT_CHOICES = {
@@ -241,7 +244,11 @@ def parse_section(raw) -> dict | None:
     instructors = [str(i).strip() for i in instructors or [] if str(i).strip()]
     location = str(clas.get("LOCATION") or "").strip().upper()
     mode = str(clas.get("INSTRUCTIONMODE") or "").strip().upper()
+    kind_text = str(raw.get("SSR") or clas.get("XLATLONGNAME") or "").strip()
+    kind_code = str(clas.get("SSRCOMPONENT") or clas.get("COMPONENTPRIMARY") or "").strip().upper()
+    kind = KINDS.get(kind_text.upper(), kind_text) if kind_text else KINDS.get(kind_code, kind_code.title())
     return {
+        "kind": kind,
         "nbr": nbr,
         "term": str(clas.get("STRM") or "").strip(),
         "subject": str(clas.get("SUBJECT") or "").strip().upper(),
@@ -310,9 +317,16 @@ def seats_text(s: dict) -> str:
     return text
 
 
+def kind_tag(s: dict) -> str:
+    """' Lab', ' Recitation' and so on; lectures (the usual case) get no tag."""
+    kind = s.get("kind") or ""
+    return "" if kind in ("", "Lecture") else f" {kind}"
+
+
 def describe(s: dict) -> str:
     who = ", ".join(s["instructors"][:2])
-    return f"#{s['nbr']} {s['subject']} {s['catalog']}-{s['section']} | {when_where(s)} | {who} | {seats_text(s)}"
+    return (f"#{s['nbr']} {s['subject']} {s['catalog']}-{s['section']}{kind_tag(s)} | {when_where(s)} | {who} | "
+            f"{seats_text(s)}")
 
 
 def short_label(s: dict) -> str:
@@ -322,7 +336,7 @@ def short_label(s: dict) -> str:
         when = "online"
     else:
         when = f"{s['campus']} {s['mode']}".strip()
-    return f"#{s['nbr']} {s['subject']} {s['catalog']}-{s['section']} ({s['instructors'][0]}, {when})"
+    return f"#{s['nbr']} {s['subject']} {s['catalog']}-{s['section']}{kind_tag(s)} ({s['instructors'][0]}, {when})"
 
 
 def link_lines(term: str, nbr: str) -> list[str]:
@@ -574,9 +588,10 @@ def cmd_search(args, today: date) -> int:
 def cmd_watch_add(args, today: date) -> int:
     term = parse_term(args.term, today)
     nbrs = list(dict.fromkeys(parse_class_nbr(c) for c in args.cls))
+    if args.together and len(nbrs) < 2:
+        raise Stop(EXIT_INPUT, "--together needs at least two class numbers, like a lecture and its lab.")
     found: dict[str, dict] = {}
-    if args.course:
-        subject, catalog = parse_course(args.course)
+    for subject, catalog in dict.fromkeys(parse_course(c) for c in args.course or []):
         for s in fetch(term, subject=subject, catalog=catalog, sample=args.sample_path)["sections"]:
             if s["nbr"] in nbrs:
                 found[s["nbr"]] = s
@@ -593,6 +608,10 @@ def cmd_watch_add(args, today: date) -> int:
     state = load_state(args.is_sample)
     if args.alert:
         state["alert_by"] = parse_alert(args.alert)
+    if args.together and len(found) < 2:
+        raise Stop(EXIT_NOT_FOUND, f"Only found #{', #'.join(found)} for {term_label(term)}, so there's nothing to "
+                                   "watch together. Check the other class number or its course.")
+    group = "+".join(sorted(found)) if args.together else None
     added = 0
     for nbr in nbrs:
         s = found.get(nbr)
@@ -610,6 +629,7 @@ def cmd_watch_add(args, today: date) -> int:
                  "deadline": s["deadline"], "last_status": s["status"], "missing": 0,
                  "last_checked": datetime.now().isoformat(timespec="minutes")}
         existing = next((w for w in state["watches"] if w["term"] == term and w["nbr"] == nbr), None)
+        entry["group"] = group if args.together else (existing or {}).get("group")
         if existing:
             existing.update(entry)
         else:
@@ -622,6 +642,8 @@ def cmd_watch_add(args, today: date) -> int:
         else:
             print(f"WATCHING {label}, now {seats_text(s)}")
     save_state(state, args.is_sample)
+    if group:
+        print(f"TOGETHER #{' and #'.join(sorted(found))}: the alert comes only when every one of them has a seat.")
     count = len(state["watches"])
     print(f"Watching {count} class{'es' if count != 1 else ''} in total.")
     if state["alert_by"] in ALERT_CHOICES:
@@ -682,7 +704,10 @@ def cmd_watch_list(args, today: date) -> int:
     count = len(state["watches"])
     print(f"Watching {count} class{'es' if count != 1 else ''}:")
     for w in state["watches"]:
-        print(f"{w['label']}, {term_label(w['term'])}: {w.get('last_status', '?')} when last checked "
+        partners = [o["nbr"] for o in state["watches"] if w.get("group") and o.get("group") == w["group"]
+                    and o["nbr"] != w["nbr"]]
+        together = f" (together with #{', #'.join(partners)})" if partners else ""
+        print(f"{w['label']}{together}, {term_label(w['term'])}: {w.get('last_status', '?')} when last checked "
               f"{ago(w.get('last_checked'))}, watching since {w.get('added', '?')}")
     return 0
 
@@ -763,8 +788,10 @@ def cmd_check(args, today: date) -> int:
 
     state["fail_streak"] = 0
     now = datetime.now().isoformat(timespec="minutes")
+    alert = alert_line(state, student_minutes(state, args.now))
     new_open = 0
     keep = []
+    rows = []  # (watch, section, previous status, current status) for every class still being watched
     for w in watches:
         label = w["label"]
         if w.get("deadline") and today.isoformat() > w["deadline"]:
@@ -781,27 +808,61 @@ def cmd_check(args, today: date) -> int:
             keep.append(w)
             continue
         w["missing"] = 0
-        label = w["label"] = short_label(s)
-        previous, current = w.get("last_status"), s["status"]
-        if current == "CANCELLED":
-            print(f"ENDED {label} was cancelled by ASU, so watching stopped.")
+        w["label"] = short_label(s)
+        if s["status"] == "CANCELLED":
+            print(f"ENDED {w['label']} was cancelled by ASU, so watching stopped.")
             continue
-        if current == "OPEN" and previous != "OPEN":
+        rows.append((w, s, w.get("last_status"), s["status"]))
+        keep.append(w)
+
+    sizes: dict[str, int] = {}
+    for w, *_ in rows:
+        if w.get("group"):
+            sizes[w["group"]] = sizes.get(w["group"], 0) + 1
+    handled: set[str] = set()
+    for w, s, previous, current in rows:
+        group = w.get("group")
+        if group and sizes.get(group, 0) >= 2:
+            # A set watched together, like a lecture and its lab: the student needs a seat in every one.
+            if group in handled:
+                continue
+            handled.add(group)
+            members = [row for row in rows if row[0].get("group") == group]
+            names = " and ".join(m[0]["label"] for m in members)
+            all_open_now = all(m[3] == "OPEN" for m in members)
+            all_open_before = all(m[2] == "OPEN" for m in members)
+            if all_open_now and not all_open_before:
+                new_open += 1
+                print(f"NEW-OPEN {names}: every one of them has a seat now, and the student needs all of them")
+                print(alert)
+                for m in members:
+                    print(f"  {m[0]['label']}: {seats_text(m[1])}")
+                    print("\n".join("  " + line for line in link_lines(m[0]["term"], m[0]["nbr"])))
+            elif all_open_now:
+                print(f"STILL-OPEN {names} (the student already knows)")
+            else:
+                opened = [m[0]["label"] for m in members if m[3] == "OPEN"]
+                if opened:
+                    print(f"PARTLY-OPEN {' and '.join(opened)} has a seat, but the rest of the set is still full "
+                          "(stay quiet)")
+                else:
+                    print(f"FULL {names} (watched together)")
+        elif current == "OPEN" and previous != "OPEN":
             new_open += 1
-            print(f"NEW-OPEN {label} has {s['open']} open seat{'s' if s['open'] != 1 else ''} of {s['cap']}")
-            print(alert_line(state, student_minutes(state, args.now)))
+            print(f"NEW-OPEN {w['label']} has {s['open']} open seat{'s' if s['open'] != 1 else ''} of {s['cap']}")
+            print(alert)
             print("\n".join(link_lines(w["term"], w["nbr"])))
         elif current == "OPEN":
-            print(f"STILL-OPEN {label}, {seats_text(s)} (the student already knows)")
+            print(f"STILL-OPEN {w['label']}, {seats_text(s)} (the student already knows)")
         elif current == "RESERVED" and previous == "FULL":
-            print(f"NEW-RESERVED {label} has {s['open_reserved']} seats open, but all are reserved "
+            print(f"NEW-RESERVED {w['label']} has {s['open_reserved']} seats open, but all are reserved "
                   "for specific groups of students")
             print(link_lines(w["term"], w["nbr"])[1])
         else:
-            print(f"{current} {label}, {seats_text(s)}")
+            print(f"{current} {w['label']}, {seats_text(s)}")
+    for w, s, previous, current in rows:
         w["last_status"] = current
         w["last_checked"] = now
-        keep.append(w)
     state["watches"] = keep
     save_state(state, args.is_sample)
     if not keep:
@@ -845,8 +906,11 @@ def build_parser() -> argparse.ArgumentParser:
     watch_sub = watch.add_subparsers(dest="action", required=True)
     add = watch_sub.add_parser("add", parents=[common], help="start watching classes")
     add.add_argument("--term", default="next")
-    add.add_argument("--course", help='subject and number, like "CSE 340" (faster and more reliable)')
+    add.add_argument("--course", action="append",
+                     help='subject and number, like "CSE 340" (faster and more reliable); repeat for more')
     add.add_argument("--class", dest="cls", action="append", required=True, help="class number; repeat for more")
+    add.add_argument("--together", action="store_true",
+                     help="the student needs all of these (like a lecture and its lab): alert only when all have seats")
     add.add_argument("--alert", help="how the student wants to hear about an opening: text, call or both")
     add.set_defaults(func=cmd_watch_add)
     lst = watch_sub.add_parser("list", parents=[common], help="show what is being watched")

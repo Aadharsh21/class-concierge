@@ -18,7 +18,7 @@ link and the student adds the class themselves. Course choices are the student's
 - "what classes should I take next semester?" or "what's on my major map for spring?"
 - "what's the easiest HU elective?" or "who's the best professor for CSE 330?"
 - "CSE 365 is full, tell me when a seat opens"
-- "watch class 21671 for spring"
+- "watch class 21671 for spring" or "my BIO 181 lab is full too"
 - "any seats left in MAT 343 with Smith?"
 - "what classes are you watching for me?" or "I got in, stop watching CSE 365"
 - "just text me from now on", "call me instead" or "no calls after 11pm"
@@ -46,9 +46,12 @@ over between conversations.
 
    Add `--campus tempe` (or `poly`, `west`, `downtown`, `online`) or `--instructor "<last name>"` when the student
    mentioned one. If they gave a 5-digit class number instead of a course, use `--class <number>`.
-3. Each line is one section: class number, days and time, place, instructor, seats. Show the student only the
-   sections that fit what they asked for (at most five), one short line each, and ask which ones to watch. Suggest
-   the full ones that match as the default.
+3. Each line is one section: class number, days and time, place, instructor, seats. Labs, recitations and other
+   non-lecture sections are labeled (like `#99001 PHY 122-1101 Lab`) and have their own class numbers and seats.
+   Show the student only the sections that fit what they asked for (at most five), one short line each, and ask
+   which ones to watch. Suggest the full ones that match as the default.
+4. If the course comes with a lab or recitation (in the same listing, or as a separate course like a lecture's
+   companion lab), ask which one the student wants too: they need a seat in both, so check both.
 
 If the student only wanted to know how many seats are left, answer from the search and stop here.
 
@@ -86,6 +89,15 @@ If the student only wanted to know how many seats are left, answer from the sear
 
    Repeat `--class` to watch several sections of the same course in one go. If the output says `ASK-ALERTS`, ask
    the alert question above and save the answer with `alerts --set`.
+
+   **Lecture and lab:** if only one of the pair is full, watch just that one. If both are full, watch them as a
+   set, so the alert comes only when both have a seat (a lecture seat is no use while the lab is still full).
+   Repeat `--course` when they're different courses:
+
+   ```bash
+   python3 scripts/seats.py watch add --term "<term>" --course "<LECTURE COURSE>" --course "<LAB COURSE>" --class <lecture number> --class <lab number> --together
+   ```
+
 4. If there is no Seat Snipe check-in yet, create one recurring check-in that runs every 15 minutes, with this task:
    "Seat Snipe: from the seat-snipe Skill's folder, run `python3 scripts/seats.py check` and follow the
    Scheduled check steps in its SKILL.md. Contact the student only when those steps say to."
@@ -105,6 +117,9 @@ Run `python3 scripts/seats.py check`, then act only on these lines:
     then text the alert.
 
   If a call can't be placed, text the alert instead and say the call didn't go through.
+
+  When a `NEW-OPEN` names a set (like a lecture and its lab), every class in it has a seat now: say they need to
+  add all of them, and text each add link on its own line.
 - `NEW-RESERVED`: seats opened, but all are reserved for specific groups of students (a major or cohort, for
   example). Text once, never call, with the view link so they can check whether they qualify.
 - `ENDED`: watching stopped for that class (the last day to add it passed, it was cancelled, or it left the class
@@ -112,7 +127,8 @@ Run `python3 scripts/seats.py check`, then act only on these lines:
 - `WARN`: ASU's class search hasn't answered for a while. Text the student once that you'll keep trying.
 - `NO-WATCHES`: nothing is left to watch. Delete this Seat Snipe check-in and don't text the student.
 
-Anything else (`FULL`, `RESERVED`, `STILL-OPEN`, `MISSING`, `FAILED`, `SUMMARY`) needs no message: stay silent.
+Anything else (`FULL`, `RESERVED`, `STILL-OPEN`, `PARTLY-OPEN`, `MISSING`, `FAILED`, `SUMMARY`) needs no message:
+stay silent. `PARTLY-OPEN` means only part of a set has a seat, which the student can't use yet.
 A watched class stays on the list after an alert until the student says they got in, so if it fills and opens
 again they hear about it again.
 

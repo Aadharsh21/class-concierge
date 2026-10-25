@@ -42,7 +42,8 @@ Cubbie: Seat open in CSE 340 (#21671, Claveau)! 2 seats left.
 - Finds the easiest electives and the best-rated professors, using student reviews from Rate My Professors and
   live seat counts, then offers to watch any full sections. Already have favorite professors? Tell it, and it uses
   yours.
-- Watches as many classes as you want, on every ASU campus and ASU Online.
+- Watches as many classes as you want, on every ASU campus and ASU Online, labs and recitations included.
+- Need a lecture and its lab? Watch them as a set, and the alert only comes when both have a seat.
 - Checks every 15 minutes and stays quiet until something changes.
 - Asks once how you want alerts (a text, a phone call, or both) and remembers it. Change it any time with
   "just text me" or "call me instead".
