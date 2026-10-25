@@ -38,7 +38,8 @@ VIEW_URL = "https://catalog.apps.asu.edu/catalog/classes/classlist?keywords={nbr
 COURSE_URL = ("https://catalog.apps.asu.edu/catalog/classes/classlist?campusOrOnlineSelection=A"
               "&catalogNbr={catalog}&honors=F&promod=F&searchType=all&subject={subject}&term={term}")
 ADD_URL = "https://go.oasis.asu.edu/addclass/?STRM={term}&ASU_CLASS_NBR={nbr}"
-USER_AGENT = "Mozilla/5.0 (compatible; seat-snipe/1.0; +https://github.com/Aadharsh21/seat-snipe)"
+USER_AGENT = ("seat-snipe/1.2 (Cubbie skill; one student's watch list, checks every 15 min; "
+              "+https://github.com/Aadharsh21/seat-snipe)")
 SKILL_DIR = Path(__file__).resolve().parent.parent
 SAMPLE_FILE = SKILL_DIR / "assets" / "sample_cse340_spring2027.json"
 
