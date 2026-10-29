@@ -132,6 +132,8 @@ Then try any of these:
 - *"are the checks going through?"*
 - *"no calls after 11pm"* or *"send me a test alert"*
 
+> **Used Seat Snipe before?** Text the same link to update. Your watches and preferences carry over.
+
 ## 🛡️ What it will never do
 
 > ❌ Enroll, drop, swap or pay for you &nbsp;·&nbsp; ❌ Ask for your ASU password &nbsp;·&nbsp; ❌ Text anyone but you
@@ -190,6 +192,10 @@ Built at **DevHacks Fall 2026** for the [Cubbie Hackathon](https://hackathon.cub
 [rajkumaar23/asu-course-notifier](https://github.com/rajkumaar23/asu-course-notifier) for documenting how it
 answers. Class Concierge is a student project, not affiliated with Arizona State University or Rate My Professors.
 
+## 📄 License
+
+MIT. See [LICENSE](LICENSE).
+
 ---
 
 <div align="center">
@@ -198,6 +204,3 @@ answers. Class Concierge is a student project, not affiliated with Arizona State
 
 </div>
 
-The project is now Class Concierge. Use the Class Concierge repository link above to install or update.
-Saved watches and preferences continue using `~/.config/seat-snipe/` for compatibility.
-When updating, Cubbie should reuse and rename existing check-ins rather than create duplicates.
